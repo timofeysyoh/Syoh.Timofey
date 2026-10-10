@@ -1,0 +1,134 @@
+<main class="privacy-page">
+  <article class="privacy-column" aria-labelledby="privacy-title">
+    <span class="privacy-texture" aria-hidden="true"></span>
+
+    <svg class="privacy-texture-filter" aria-hidden="true">
+      <filter id="privacy-void-texture">
+        <feTurbulence
+          seed="5"
+          result="noise1"
+          numOctaves="8"
+          baseFrequency="0.015"
+          type="fractalNoise"
+        ></feTurbulence>
+        <feTurbulence
+          seed="2"
+          result="noise2"
+          numOctaves="8"
+          baseFrequency="0.015"
+          type="fractalNoise"
+        ></feTurbulence>
+        <feMerge result="noise">
+          <feMergeNode in="noise1"></feMergeNode>
+          <feMergeNode in="noise1"></feMergeNode>
+          <feMergeNode in="noise2"></feMergeNode>
+        </feMerge>
+        <feSpecularLighting
+          result="specular"
+          lighting-color="#ffffff"
+          specularExponent="20"
+          specularConstant="0.72"
+          surfaceScale="3"
+          in="noise"
+        >
+          <feDistantLight elevation="45" azimuth="90"></feDistantLight>
+        </feSpecularLighting>
+        <feComposite
+          result="lit"
+          operator="over"
+          in2="SourceGraphic"
+          in="specular"
+        ></feComposite>
+        <feBlend mode="screen" in2="lit" in="SourceGraphic"></feBlend>
+      </filter>
+    </svg>
+
+    <a class="privacy-back" routerLink="/" aria-label="Return to the home page">
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M8.354 1.646a.5.5 0 0 1 0 .708L3.207 7.5H14.5a.5.5 0 0 1 0 1H3.207l5.147 5.146a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"></path>
+      </svg>
+      <span>Back</span>
+    </a>
+
+    <header class="privacy-header">
+      <p class="privacy-brand">Syoh Timofey</p>
+      <h1 id="privacy-title">Privacy Policy</h1>
+      <p class="privacy-updated">Updated September 15, 2026</p>
+    </header>
+
+    <div class="privacy-content">
+      <section>
+        <h2>In brief</h2>
+        <p>
+          At present, this website does not contain forms, use analytics or
+          advertising systems, or set its own cookies. Interactive elements work
+          without creating a visitor profile.
+        </p>
+      </section>
+
+      <section>
+        <h2>Data that may be processed</h2>
+        <p>
+          The website does not request your name, email address, phone number, or
+          other personal data. However, the hosting provider may automatically
+          process technical request logs, including an IP address, browser type,
+          and the date and time of a request, to maintain security and reliable
+          website operation.
+        </p>
+      </section>
+
+      <section>
+        <h2>Google Fonts</h2>
+        <p>
+          To display the Dancing Script typeface, the website loads files through
+          Google Fonts. During this process, your browser connects directly to
+          Google domains, so the service receives technical request data in
+          accordance with the
+          <a href="https://fonts.google.com/faq" target="_blank" rel="noopener noreferrer">
+            Google Fonts privacy information</a
+          >
+          and the
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+            Google Privacy Policy</a
+          >.
+        </p>
+      </section>
+
+      <section>
+        <h2>Local interactions</h2>
+        <p>
+          Expanding the Latest section, scrolling the page, and other visual
+          interactions are handled directly in your browser. Their state is not
+          sent to the website owner and is reset when the page is reloaded.
+        </p>
+      </section>
+
+      <section>
+        <h2>External platforms</h2>
+        <p>
+          Social and music platform icons, as well as the Explore buttons, do not
+          currently open external links or load embedded content from those
+          services. If these features are added, the privacy policies of the
+          respective external websites will apply.
+        </p>
+      </section>
+
+      <section>
+        <h2>Contact</h2>
+        <p>
+          The Contact button does not currently transmit any data. Before a form
+          or another contact method is enabled, this policy will be updated with
+          information about how messages are processed.
+        </p>
+      </section>
+
+      <section>
+        <h2>Changes to this policy</h2>
+        <p>
+          This policy may change as the website’s features evolve. The date of the
+          latest update will always be shown on this page.
+        </p>
+      </section>
+    </div>
+  </article>
+</main>

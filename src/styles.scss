@@ -1,1 +1,49 @@
-/* You can add global styles to this file, and also import other style files */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  background-color: #747b81;
+  background-image: radial-gradient(
+    circle at center,
+    #efede8 0%,
+    rgb(222 222 219 / 92%) 26%,
+    rgb(159 164 169 / 96%) 62%,
+    #626970 100%
+  );
+  background-size: cover;
+  background-repeat: no-repeat;
+  overflow: hidden;
+}
+
+body {
+  min-width: 20rem;
+  height: 100%;
+  margin: 0;
+  background-color: #747b81;
+  background-image: radial-gradient(
+    circle at center,
+    #efede8 0%,
+    rgb(222 222 219 / 92%) 26%,
+    rgb(159 164 169 / 96%) 62%,
+    #626970 100%
+  );
+  background-size: cover;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  color: #1e1d1a;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+app-root {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+}
+
+img {
+  max-width: 100%;
+}

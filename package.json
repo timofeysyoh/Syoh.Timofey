@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "optimize:images": "node scripts/optimize-images.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:syohtimofey": "node dist/syohtimofey/server/server.mjs"
@@ -32,6 +33,7 @@
     "@types/node": "^20.17.19",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
+    "sharp": "^0.35.4",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"
   }
