@@ -5,10 +5,11 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:hosting": "npm run build && npm run check:hosting",
+    "check:hosting": "node scripts/verify-hosting.mjs",
     "optimize:images": "node scripts/optimize-images.mjs",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "serve:ssr:syohtimofey": "node dist/syohtimofey/server/server.mjs"
+    "test": "ng test"
   },
   "private": true,
   "packageManager": "npm@11.9.0",
