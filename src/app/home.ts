@@ -1,12 +1,29 @@
-import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  ElementRef,
+  HostListener,
+  inject,
+  NgZone,
+  ViewChild,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-home',
   imports: [RouterLink],
-  templateUrl: './app.html'
+  templateUrl: './app.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Home {
+  private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly zone = inject(NgZone);
+
+  @ViewChild('pageScroller') private pageScroller?: ElementRef<HTMLElement>;
   @ViewChild('brandTitle') private brandTitle?: ElementRef<HTMLElement>;
   @ViewChild('contactTrigger') private contactTrigger?: ElementRef<HTMLButtonElement>;
   @ViewChild('contactPanel') private contactPanel?: ElementRef<HTMLElement>;
@@ -18,20 +35,61 @@ export class Home {
   contactMessageLength = 0;
   contactFormNotice = false;
 
-  onPageScroll(event: Event): void {
-    const scroller = event.currentTarget as HTMLElement | null;
-    const title = this.brandTitle?.nativeElement;
+  constructor() {
+    afterNextRender(() => {
+      this.zone.runOutsideAngular(() => this.observePageScroll());
+    });
+  }
 
-    if (!scroller || !title) {
+  private observePageScroll(): void {
+    const scroller = this.pageScroller?.nativeElement;
+    const title = this.brandTitle?.nativeElement;
+    const browser = scroller?.ownerDocument.defaultView;
+
+    if (!scroller || !title || !browser) {
       return;
     }
 
-    const stickyEdge = scroller.getBoundingClientRect().top + 17;
-    const shouldCompact = scroller.scrollTop > 0 && title.getBoundingClientRect().top <= stickyEdge;
+    let frame: number | null = null;
+    let stopped = false;
 
-    if (this.brandCompact !== shouldCompact) {
-      this.brandCompact = shouldCompact;
-    }
+    const update = (): void => {
+      frame = null;
+
+      if (stopped) {
+        return;
+      }
+
+      // Read geometry once per rendered frame, with no DOM reads needed at the top.
+      const shouldCompact =
+        scroller.scrollTop > 0 &&
+        title.getBoundingClientRect().top <= scroller.getBoundingClientRect().top + 17;
+
+      if (this.brandCompact !== shouldCompact) {
+        this.zone.run(() => {
+          this.brandCompact = shouldCompact;
+          this.changeDetector.markForCheck();
+        });
+      }
+    };
+
+    const scheduleUpdate = (): void => {
+      if (frame === null && !stopped) {
+        frame = browser.requestAnimationFrame(update);
+      }
+    };
+
+    scroller.addEventListener('scroll', scheduleUpdate, { passive: true });
+    scheduleUpdate();
+
+    this.destroyRef.onDestroy(() => {
+      stopped = true;
+      scroller.removeEventListener('scroll', scheduleUpdate);
+
+      if (frame !== null) {
+        browser.cancelAnimationFrame(frame);
+      }
+    });
   }
 
   toggleUpdates(): void {
@@ -70,8 +128,8 @@ export class Home {
 
     const focusableElements = Array.from(
       panel.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
-      )
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+      ),
     ).filter((element) => !element.hasAttribute('hidden'));
 
     const firstElement = focusableElements[0];

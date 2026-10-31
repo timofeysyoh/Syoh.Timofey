@@ -109,8 +109,6 @@
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 38%),
     inset 0 0 7rem rgb(255 255 255 / 20%);
-  backdrop-filter: blur(38px) saturate(105%) contrast(96%);
-  -webkit-backdrop-filter: blur(38px) saturate(105%) contrast(96%);
   content: '';
   transform: translateX(-50%);
   mask-image:
@@ -146,12 +144,11 @@
   bottom: 0;
   left: 50%;
   width: 100%;
-  background: linear-gradient(
-    to bottom,
-    rgb(202 205 208 / 38%) 0%,
-    rgb(132 137 143 / 42%) 100%
-  );
-  filter: url(#void-texture);
+  background-image:
+    url('/glass-texture.webp'),
+    linear-gradient(to bottom, rgb(202 205 208 / 38%), rgb(132 137 143 / 42%));
+  background-size: 256px 256px, 100% 100%;
+  background-repeat: repeat, no-repeat;
   opacity: 0.72;
   mix-blend-mode: screen;
   transform: translateX(-50%);
@@ -177,14 +174,6 @@
     ),
     linear-gradient(to right, transparent 0%, black 1.25rem, black calc(100% - 1.25rem), transparent 100%);
   -webkit-mask-composite: source-in;
-  pointer-events: none;
-}
-
-.texture-filter {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
   pointer-events: none;
 }
 
@@ -232,8 +221,8 @@
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 52%);
   content: '';
   opacity: 0;
-  backdrop-filter: blur(24px) saturate(112%);
-  -webkit-backdrop-filter: blur(24px) saturate(112%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   transition: opacity 280ms ease;
   pointer-events: none;
 }
@@ -405,8 +394,6 @@
     inset 0 -0.12rem 0.14rem rgb(255 255 255 / 30%),
     inset 0 0 1.8rem rgb(255 255 255 / 16%),
     0 0.7rem 1.4rem -0.8rem rgb(48 42 34 / 42%);
-  backdrop-filter: blur(18px) saturate(155%);
-  -webkit-backdrop-filter: blur(18px) saturate(155%);
   isolation: isolate;
 }
 
@@ -445,7 +432,6 @@
   max-width: none;
   height: auto;
   opacity: 0.2;
-  filter: grayscale(1) contrast(1.18) blur(2px);
   mix-blend-mode: multiply;
   transform: translate(-50%, -50%) rotate(-32deg);
   transform-origin: center;
@@ -458,7 +444,6 @@
   left: 68%;
   width: 62%;
   opacity: 0.18;
-  filter: grayscale(0.85) contrast(1.08) blur(1.5px);
   transform: translate(-50%, -50%);
 }
 
@@ -467,7 +452,6 @@
   left: 54%;
   width: 118%;
   opacity: 0.22;
-  filter: grayscale(0.55) contrast(1.08) blur(1.2px);
   transform: translate(-50%, -50%);
 }
 
@@ -525,8 +509,6 @@
     inset 0 1px 1px rgb(255 255 255 / 82%),
     inset 0 -1px 2px rgb(54 47 38 / 10%),
     0 0.35rem 0.8rem -0.45rem rgb(48 42 34 / 42%);
-  backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
 }
 
 .media-card__links--social .media-card__link svg,
@@ -638,9 +620,7 @@
   overflow-y: auto;
   place-items: center;
   padding: 1rem;
-  background: rgb(61 65 69 / 34%);
-  backdrop-filter: blur(14px) saturate(90%);
-  -webkit-backdrop-filter: blur(14px) saturate(90%);
+  background: rgb(61 65 69 / 64%);
   overscroll-behavior: contain;
 }
 
@@ -1161,10 +1141,7 @@
     inset 0 1px 1px rgb(255 255 255 / 75%),
     inset 0 -1px 2px rgb(65 70 75 / 10%),
     0 0.75rem 1.6rem -1rem rgb(43 47 51 / 48%);
-  backdrop-filter: blur(20px) saturate(125%);
-  -webkit-backdrop-filter: blur(20px) saturate(125%);
   transition:
-    top 420ms cubic-bezier(0.22, 0.8, 0.3, 1),
     opacity 320ms ease,
     transform 420ms cubic-bezier(0.22, 0.8, 0.3, 1);
 }
@@ -1184,16 +1161,16 @@
 
 .notification-card--middle {
   z-index: 20;
-  top: 1.15rem;
+  top: 0;
   opacity: 0.68;
-  transform: scale(0.94);
+  transform: translateY(1.15rem) scale(0.94);
 }
 
 .notification-card--bottom {
   z-index: 10;
-  top: 2.25rem;
+  top: 0;
   opacity: 0.42;
-  transform: scale(0.88);
+  transform: translateY(2.25rem) scale(0.88);
 }
 
 .notification-card--middle .notification-content,
@@ -1203,15 +1180,13 @@
 }
 
 .notification-container--expanded .notification-card--middle {
-  top: 5.6rem;
   opacity: 1;
-  transform: scale(1);
+  transform: translateY(5.6rem) scale(1);
 }
 
 .notification-container--expanded .notification-card--bottom {
-  top: 11.2rem;
   opacity: 1;
-  transform: scale(1);
+  transform: translateY(11.2rem) scale(1);
 }
 
 .notification-container--expanded .notification-card .notification-content {
@@ -1287,7 +1262,20 @@
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: notification-title-flow 5s linear infinite;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .notification-card:hover .notification-title {
+    animation: notification-title-flow 5s linear 1;
+  }
+}
+
+// Touch devices keep the glass gradient without recomputing a backdrop on scroll.
+@media (hover: none), (max-width: 48rem) {
+  .brand-title::before {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }
 
 .notification-card--top {

@@ -57,7 +57,10 @@ for (const route of routes) {
   for (const element of document.querySelectorAll(
     'img[src], script[src], link[rel="stylesheet"][href], link[rel="icon"][href], link[rel="apple-touch-icon"][href]',
   )) {
-    await verifyAsset(element.getAttribute('src') ?? element.getAttribute('href'), document.baseURI);
+    await verifyAsset(
+      element.getAttribute('src') ?? element.getAttribute('href'),
+      document.baseURI,
+    );
   }
 
   for (const element of document.querySelectorAll('[srcset]')) {
@@ -67,6 +70,29 @@ for (const route of routes) {
   }
 
   if (route.path === '/') {
+    assert.equal(
+      document.querySelectorAll('feTurbulence, feSpecularLighting').length,
+      0,
+      'Full-page SVG noise/lighting must be prerasterized, not rendered on the phone.',
+    );
+    let decorationBytes = 0;
+    for (const decoration of document.querySelectorAll('.media-card__decoration')) {
+      assert.equal(decoration.getAttribute('loading'), 'lazy');
+      assert.equal(decoration.getAttribute('decoding'), 'async');
+      assert.ok(decoration.hasAttribute('width') && decoration.hasAttribute('height'));
+      const source = decoration.getAttribute('src');
+      assert.ok(source.endsWith('.webp'), `Decoration must use its optimized asset: ${source}`);
+      decorationBytes += (await stat(resolve(output, `.${source}`))).size;
+    }
+    assert.ok(
+      decorationBytes <= 80 * 1024,
+      `Decorations exceed the 80 KiB mobile budget: ${decorationBytes} bytes.`,
+    );
+    assert.equal(
+      document.querySelectorAll('link[href*="fonts.googleapis.com"]').length,
+      0,
+      'A third-party font stylesheet must not block the first render.',
+    );
     const person = JSON.parse(
       document.querySelector('script[type="application/ld+json"]').textContent,
     );

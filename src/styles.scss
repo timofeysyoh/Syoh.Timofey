@@ -47,3 +47,10 @@ app-root {
 img {
   max-width: 100%;
 }
+@font-face {
+  font-family: 'Dancing Script';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/dancing-script-latin.woff2') format('woff2');
+}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- Rasterized once by optimize-images.mjs, never applied as a runtime filter. -->
+  <defs>
+    <filter id="glass" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.015625" numOctaves="8" seed="5" stitchTiles="stitch" result="noise"/>
+      <feSpecularLighting in="noise" surfaceScale="3" specularConstant="0.72" specularExponent="20" lighting-color="#ffffff" result="light">
+        <feDistantLight elevation="45" azimuth="90"/>
+      </feSpecularLighting>
+      <feBlend in="SourceGraphic" in2="light" mode="screen"/>
+    </filter>
+  </defs>
+  <rect width="256" height="256" fill="#80858b" filter="url(#glass)"/>
+</svg>
