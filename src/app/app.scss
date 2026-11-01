@@ -936,6 +936,13 @@
   text-align: right;
 }
 
+@media (max-width: 48rem), (pointer: coarse) {
+  .contact-field__control {
+    // Safari zooms focused form controls when their text is smaller than 16px.
+    font-size: max(16px, 1rem);
+  }
+}
+
 @media (max-width: 30rem) {
   .personal-site {
     padding-inline: 0;
