@@ -785,19 +785,38 @@
   transform: rotate(45deg);
 }
 
+.contact-field--message {
+  --message-max-height: clamp(7.75rem, 24dvh, 12rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  // Reserve the resize range so the footer and dialog stay in place.
+  height: var(--message-max-height);
+}
+
 .contact-field__textarea {
+  grid-area: 1 / 1;
+  display: block;
+  height: 7.75rem;
   min-height: 7.75rem;
+  max-height: var(--message-max-height);
+  max-width: 100%;
+  overflow: auto;
   resize: vertical;
   padding-top: 1.55rem;
   padding-bottom: 1.65rem;
 }
 
 .contact-field__counter {
-  position: absolute;
+  grid-area: 1 / 1;
+  align-self: end;
+  justify-self: end;
+  position: relative;
   right: 0.9rem;
   bottom: 0.65rem;
   color: rgb(48 50 51 / 68%);
   font-size: 0.65rem;
+  pointer-events: none;
 }
 
 .contact-form__footer {

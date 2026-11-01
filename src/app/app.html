@@ -307,7 +307,7 @@
   <div
     class="contact-panel-backdrop"
     role="presentation"
-    (click)="closeContactPanel()"
+    (pointerdown)="$event.target === $event.currentTarget ? closeContactPanel() : null"
   >
     <section
       #contactPanel

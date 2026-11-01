@@ -106,3 +106,53 @@ describe('Home scroll handling', () => {
     expect(title.getBoundingClientRect).not.toHaveBeenCalled();
   });
 });
+
+describe('Home contact panel pointer interactions', () => {
+  let fixture: ComponentFixture<Home>;
+
+  beforeEach(async () => {
+    // Use the real Home template, including its backdrop event binding.
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [Home],
+      providers: [provideRouter([])],
+    }).compileComponents();
+    fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    await fixture.whenStable();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+    TestBed.resetTestingModule();
+  });
+
+  it('allows textarea resizing without dismissing the panel when the pointer is released outside', async () => {
+    const page = fixture.nativeElement as HTMLElement;
+    const contact = page.querySelector<HTMLButtonElement>('.footer-button--contact');
+    expect(contact).not.toBeNull();
+    contact!.click();
+    await fixture.whenStable();
+
+    const textarea = page.querySelector<HTMLTextAreaElement>('#contact-message');
+    const backdrop = page.querySelector<HTMLElement>('.contact-panel-backdrop');
+    expect(textarea).not.toBeNull();
+    expect(backdrop).not.toBeNull();
+    expect(page.querySelector('[role="dialog"]')).not.toBeNull();
+
+    const resizeStart = new Event('pointerdown', { bubbles: true, cancelable: true });
+    expect(textarea!.dispatchEvent(resizeStart)).toBe(true);
+    expect(resizeStart.defaultPrevented).toBe(false);
+    await fixture.whenStable();
+    expect(page.querySelector('[role="dialog"]')).not.toBeNull();
+
+    // A resize started inside may produce a backdrop click when released outside.
+    backdrop!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+    expect(page.querySelector('[role="dialog"]')).not.toBeNull();
+
+    backdrop!.dispatchEvent(new Event('pointerdown', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+    expect(page.querySelector('[role="dialog"]')).toBeNull();
+  });
+});
