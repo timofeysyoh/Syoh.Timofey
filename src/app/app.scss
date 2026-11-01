@@ -1067,6 +1067,7 @@
   justify-content: end;
 }
 
+.media-card-wrap--podcast .media-card,
 .media-card-wrap--business .media-card,
 .media-card-wrap--crypto .media-card {
   min-height: 4.7rem;
@@ -1076,6 +1077,7 @@
   padding: 0.85rem 1rem;
 }
 
+.media-card-wrap--podcast .media-card__label,
 .media-card-wrap--business .media-card__label,
 .media-card-wrap--crypto .media-card__label {
   width: auto;
@@ -1086,6 +1088,23 @@
   font-weight: 700;
   letter-spacing: -0.025em;
   text-align: center;
+}
+
+.podcast-card__art {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 22%;
+  width: 8.5rem;
+  height: 9.5rem;
+  fill: none;
+  stroke: #505861;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.16;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  pointer-events: none;
 }
 
 .feature-card__action {
@@ -1108,6 +1127,7 @@
   font: inherit;
   font-size: 0.78rem;
   font-weight: 650;
+  text-decoration: none;
   cursor: pointer;
 }
 

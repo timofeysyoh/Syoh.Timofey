@@ -1,0 +1,165 @@
+<main class="podcast-page">
+  <div class="podcast-column">
+    <nav class="podcast-nav" aria-label="Podcast navigation">
+      <a class="podcast-back" routerLink="/" aria-label="Back to the home page">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m14 6-6 6 6 6M8 12h12" />
+        </svg>
+        <span>Back</span>
+      </a>
+      <span class="podcast-nav__brand">Syoh Timofey</span>
+    </nav>
+
+    <header class="podcast-hero">
+      <p class="podcast-eyebrow">A space for conversation</p>
+      <div class="podcast-hero__title-row">
+        <h1>Podcast</h1>
+        <div class="podcast-art" aria-hidden="true">
+          <span class="podcast-art__ring"></span>
+          <svg class="podcast-art__microphone" viewBox="0 0 80 104">
+            <rect x="23" y="9" width="34" height="57" rx="17" fill="#c5cdd3" stroke="#69747d" stroke-width="1.5" />
+            <path d="M28 24c0-6.6 5.4-12 12-12" fill="none" stroke="#f7f9fa" stroke-width="2" stroke-linecap="round" />
+            <path d="M30 24h20M30 31h20M30 38h20M30 45h20" stroke="#7e8992" stroke-width="2" stroke-linecap="round" />
+            <path d="M14 48v3a26 26 0 0 0 52 0v-3M40 77v15M27 94h26" fill="none" stroke="#56616b" stroke-width="3" stroke-linecap="round" />
+            <path d="M5 30v16M75 30v16" stroke="#98a2aa" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </div>
+      </div>
+      <p class="podcast-hero__byline">with Syoh Timofey</p>
+      <p class="podcast-hero__description">
+        People, ideas, and the stories behind them. Listen to the conversation —
+        or bring a story of your own.
+      </p>
+      <button class="podcast-primary" type="button" (click)="goToApplication()">
+        <span>Be part of the conversation</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12h14m-5-5 5 5-5 5" />
+        </svg>
+      </button>
+    </header>
+
+    <section class="podcast-listen" aria-labelledby="podcast-listen-title">
+      <div class="podcast-section-heading">
+        <span class="podcast-section-heading__number" aria-hidden="true">01</span>
+        <h2 id="podcast-listen-title">Listen &amp; watch</h2>
+      </div>
+      <p class="podcast-section-copy">Choose where to join the conversation.</p>
+
+      <div class="podcast-platforms">
+        <article class="podcast-platform">
+          <span class="podcast-platform__icon podcast-platform__icon--apple" aria-hidden="true">
+            <svg viewBox="0 0 32 32">
+              <path d="M10.1 24.1a11 11 0 1 1 11.8 0M11.7 19.5a6.6 6.6 0 1 1 8.6 0" />
+              <circle cx="16" cy="13.3" r="2.2" />
+              <path d="M12.8 19.9c0-1.7 1.4-2.7 3.2-2.7s3.2 1 3.2 2.7L18.1 27c-.2 1.1-.9 1.7-2.1 1.7s-1.9-.6-2.1-1.7z" />
+            </svg>
+          </span>
+          <div class="podcast-platform__body">
+            <h3>Apple Podcasts</h3>
+            <p>Take the conversation with you.</p>
+          </div>
+          @if (config.applePodcastsUrl; as appleUrl) {
+            <a class="podcast-platform__action" [href]="appleUrl" target="_blank" rel="noopener noreferrer" aria-label="Listen on Apple Podcasts (opens in a new tab)">
+              Listen <span aria-hidden="true">↗</span>
+            </a>
+          } @else {
+            <span class="podcast-platform__status">Coming soon</span>
+          }
+        </article>
+
+        <article class="podcast-platform">
+          <span class="podcast-platform__icon podcast-platform__icon--youtube" aria-hidden="true">
+            <svg viewBox="0 0 32 32">
+              <rect x="4" y="7.5" width="24" height="17" rx="5.5" />
+              <path d="m13.5 12 7 4-7 4z" />
+            </svg>
+          </span>
+          <div class="podcast-platform__body">
+            <h3>YouTube</h3>
+            <p>Watch every expression and moment.</p>
+          </div>
+          @if (config.youtubeUrl; as youtubeUrl) {
+            <a class="podcast-platform__action" [href]="youtubeUrl" target="_blank" rel="noopener noreferrer" aria-label="Watch on YouTube (opens in a new tab)">
+              Watch <span aria-hidden="true">↗</span>
+            </a>
+          } @else {
+            <span class="podcast-platform__status">Coming soon</span>
+          }
+        </article>
+      </div>
+    </section>
+
+    <section class="podcast-application" id="apply" aria-labelledby="podcast-application-title">
+      <div class="podcast-section-heading">
+        <span class="podcast-section-heading__number" aria-hidden="true">02</span>
+        <h2 #applicationTitle id="podcast-application-title" tabindex="-1">Bring your story</h2>
+      </div>
+      <p class="podcast-section-copy">
+        Join as a guest, suggest someone we should meet, or propose a podcast
+        collaboration. Tell us what you have in mind.
+      </p>
+
+      <div class="podcast-application__card">
+        <div class="podcast-availability" id="podcast-availability">
+          <span class="podcast-availability__dot" aria-hidden="true"></span>
+          <div>
+            <p class="podcast-availability__title">Applications are not open yet.</p>
+            <p>Message delivery will be available here. This form is a preview; nothing is sent.</p>
+          </div>
+        </div>
+
+        <form class="podcast-form" aria-describedby="podcast-availability" (submit)="submitApplication($event)">
+          <p class="podcast-form__required">Required fields are marked with <span aria-hidden="true">*</span>.</p>
+          <div class="podcast-form__row">
+            <div class="podcast-field">
+              <label for="podcast-name">Full name <span aria-hidden="true">*</span></label>
+              <input id="podcast-name" name="fullName" type="text" autocomplete="name" maxlength="100" required placeholder="Your full name" />
+            </div>
+            <div class="podcast-field">
+              <label for="podcast-email">Email <span aria-hidden="true">*</span></label>
+              <input id="podcast-email" name="email" type="email" autocomplete="email" maxlength="254" required placeholder="you@example.com" />
+            </div>
+          </div>
+
+          <div class="podcast-field">
+            <label for="podcast-interest">I'd like to <span aria-hidden="true">*</span></label>
+            <select id="podcast-interest" name="interest" required>
+              <option value="" selected disabled>Select an option</option>
+              <option value="guest">Join as a guest</option>
+              <option value="suggest-guest">Suggest a guest</option>
+              <option value="collaboration">Commission a podcast or collaborate</option>
+            </select>
+          </div>
+
+          <div class="podcast-field">
+            <label for="podcast-topic">Topic or idea <span aria-hidden="true">*</span></label>
+            <input id="podcast-topic" name="topic" type="text" maxlength="160" required placeholder="What would you like to talk about?" />
+          </div>
+
+          <div class="podcast-field podcast-field--message">
+            <label for="podcast-message">Tell us a little more <span aria-hidden="true">*</span></label>
+            <div class="podcast-message-room">
+              <div class="podcast-message-control">
+                <textarea id="podcast-message" name="message" rows="5" maxlength="1500" required placeholder="Introduce yourself or your guest and tell us why this conversation matters." aria-describedby="podcast-message-count" (input)="updateMessageLength($event)"></textarea>
+                <span class="podcast-field__count" id="podcast-message-count">{{ messageLength }}/1500</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="podcast-form__footer">
+            <p>Form preview. Nothing is sent or saved by this website. <a routerLink="/privacy/">Privacy</a></p>
+            <button class="podcast-submit" type="submit" [disabled]="!applicationDeliveryAvailable">Submit application</button>
+          </div>
+          @if (applicationNotice) {
+            <p class="podcast-form__notice" role="status">{{ applicationNotice }}</p>
+          }
+        </form>
+      </div>
+    </section>
+
+    <footer class="podcast-footer">
+      <a routerLink="/">Syoh Timofey</a>
+      <span>A conversation starts with an idea.</span>
+    </footer>
+  </div>
+</main>

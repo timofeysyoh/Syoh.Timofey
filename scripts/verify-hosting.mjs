@@ -15,6 +15,12 @@ const routes = [
     heading: 'Syoh Timofey',
   },
   {
+    file: 'podcast/index.html',
+    path: '/podcast/',
+    title: 'Podcast | Syoh Timofey',
+    heading: 'Podcast',
+  },
+  {
     file: 'privacy/index.html',
     path: '/privacy/',
     title: 'Privacy | Syoh Timofey',
@@ -97,6 +103,11 @@ for (const route of routes) {
       document.querySelector('script[type="application/ld+json"]').textContent,
     );
     assert.equal(person.url, `${origin}/`);
+    assert.match(
+      document.querySelector('.media-card-wrap--podcast a')?.getAttribute('href') ?? '',
+      /^\/podcast\/?$/,
+      'The Podcast card must open the internal podcast page.',
+    );
     for (const platform of ['Instagram', 'X', 'Twitch']) {
       assert.ok(
         document

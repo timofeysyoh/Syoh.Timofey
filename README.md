@@ -1,6 +1,6 @@
 # Syoh Timofey
 
-Офіційний сайт для `https://syohtimofey.com` на Angular 21. Сайт збирається у статичні HTML-файли для Cloudflare Pages: головна сторінка та `/privacy/` готові до віддачі з CDN, окремий Node.js-сервер на хостингу не потрібен.
+Офіційний сайт для `https://syohtimofey.com` на Angular 21. Сайт збирається у статичні HTML-файли для Cloudflare Pages: головна сторінка, `/podcast/` та `/privacy/` готові до віддачі з CDN, окремий Node.js-сервер на хостингу не потрібен.
 
 ## Локальний запуск і збірка
 
@@ -105,5 +105,11 @@ Compress-Archive -Path dist/syohtimofey/browser/* -DestinationPath dist/syohtimo
 - Instagram, X і Twitch залишаються прихованими до додавання профілів.
 
 Контактна форма зараз демонстраційна: вона показує повідомлення в інтерфейсі, але не надсилає листи й не має backend. Публікація статичних файлів цього не змінює; для реального приймання звернень потрібне окреме підключення сервісу або API.
+
+## Подкаст
+
+Картка **Podcast → Explore** у Ventures відкриває внутрішню сторінку `/podcast/`. Вона завантажується окремим JS-модулем і пререндериться разом з іншими сторінками. Сторінка містить Apple Podcasts, YouTube та форму заявки гостя, пропозиції гостя або співпраці.
+
+Офіційні адреси платформ задаються в `src/app/podcast/podcast.config.ts`. Поки адрес немає, відповідні елементи показують **Coming soon**. Форма є локальним preview: значення не зберігаються й не передаються, кнопка подання недоступна до підключення справжньої доставки. Вказування пошти саме по собі не підключає backend.
 
 Перевірити поведінку статичних сторінок і заголовків після deployment допоможуть [Serving Pages](https://developers.cloudflare.com/pages/configuration/serving-pages/) та [Headers](https://developers.cloudflare.com/pages/configuration/headers/).
