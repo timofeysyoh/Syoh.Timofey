@@ -702,6 +702,13 @@
   gap: 0.75rem;
 }
 
+.contact-form__intro {
+  margin: 0;
+  color: #3c3d3d;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
 .contact-form__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

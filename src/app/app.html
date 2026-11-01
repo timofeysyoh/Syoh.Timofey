@@ -315,7 +315,7 @@
       role="dialog"
       aria-modal="true"
       aria-labelledby="contact-panel-title"
-      aria-describedby="contact-panel-description"
+      aria-describedby="contact-panel-description contact-preview-notice"
       (click)="$event.stopPropagation()"
       (keydown)="trapContactFocus($event)"
     >
@@ -342,6 +342,9 @@
       </header>
 
       <form class="contact-form" (submit)="submitContactForm($event)">
+        <p id="contact-preview-notice" class="contact-form__intro">
+          Message delivery is not available yet. This form is a preview and does not send messages.
+        </p>
         <div class="contact-form__grid">
           <div class="contact-field">
             <input
