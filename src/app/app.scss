@@ -776,6 +776,7 @@
 
 .contact-field__select {
   appearance: none;
+  padding-right: 2.5rem;
   cursor: pointer;
 }
 
@@ -833,6 +834,19 @@
   gap: 0.8rem;
 }
 
+.contact-form__details {
+  min-width: 0;
+  margin: 0;
+  color: rgb(48 48 47 / 70%);
+  font-size: 0.68rem;
+  line-height: 1.3;
+}
+
+.contact-form__details a {
+  color: inherit;
+  text-underline-offset: 0.15rem;
+}
+
 .contact-consent {
   display: flex;
   min-width: 0;
@@ -878,6 +892,7 @@
 
 .contact-consent input:focus-visible + .contact-consent__box,
 .contact-panel__close:focus-visible,
+.contact-form__details a:focus-visible,
 .contact-send:focus-visible {
   outline: 2px solid rgb(255 255 255 / 90%);
   outline-offset: 0.18rem;
@@ -916,12 +931,19 @@
   stroke: none;
 }
 
-.contact-send:hover .arrow {
-  animation: contact-arrow-jello 900ms both;
-  transform-origin: left center;
+.contact-send:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.contact-send:active {
+@media (prefers-reduced-motion: no-preference) {
+  .contact-send:enabled:hover .arrow {
+    animation: contact-arrow-jello 900ms both;
+    transform-origin: left center;
+  }
+}
+
+.contact-send:enabled:active {
   transform: scale(0.9);
 }
 
