@@ -18,6 +18,13 @@ async function optimizeDecorations() {
       blur: 2,
     },
     {
+      source: 'мікрофон.png',
+      output: 'podcast-microphone.webp',
+      width: 600,
+      saturation: 0,
+      blur: 1,
+    },
+    {
       source: 'crypto.png',
       output: 'crypto-optimized.webp',
       width: 768,

@@ -19,7 +19,7 @@ export const routes: Routes = [
     data: {
       canonicalPath: '/podcast/',
       description:
-        'The podcast by Syoh Timofey. Find listening platforms and learn how to apply as a guest, suggest a guest or propose a podcast collaboration.',
+        'The podcast by Syoh Timofey. Explore guest appearances, conversation requests and podcast collaborations.',
     },
   },
   {

@@ -31,7 +31,7 @@
               {
                 "glob": "**/*",
                 "input": "public",
-                "ignore": ["piano.png", "crypto.png", "руль.png"]
+                "ignore": ["piano.png", "crypto.png", "руль.png", "мікрофон.png"]
               }
             ],
             "styles": [
