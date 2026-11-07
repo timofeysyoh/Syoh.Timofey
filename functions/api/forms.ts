@@ -56,6 +56,11 @@ export function jsonResponse(body: unknown, status = 200, extraHeaders: Record<s
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': 'no-store',
       'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+      'Content-Security-Policy': "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+      'Strict-Transport-Security': 'max-age=15552000',
       ...extraHeaders,
     },
   });

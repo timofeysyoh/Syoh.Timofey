@@ -73,6 +73,11 @@ test('configuration exposes only the public site key and is never cached', async
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { available: true, turnstileSiteKey: environment.TURNSTILE_SITE_KEY });
   assert.equal(response.headers.get('Cache-Control'), 'no-store');
+  assert.equal(response.headers.get('X-Content-Type-Options'), 'nosniff');
+  assert.equal(response.headers.get('X-Frame-Options'), 'DENY');
+  assert.match(response.headers.get('Content-Security-Policy'), /default-src 'none'/);
+  assert.match(response.headers.get('Content-Security-Policy'), /frame-ancestors 'none'/);
+  assert.equal(response.headers.get('Strict-Transport-Security'), 'max-age=15552000');
 });
 
 test('configuration fails closed when required settings are missing or dummy Turnstile keys are used', async () => {

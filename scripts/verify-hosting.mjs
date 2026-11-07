@@ -189,9 +189,31 @@ assert.ok(
 );
 assert.equal(notFound.window.document.querySelector('a')?.getAttribute('href'), '/');
 notFound.window.close();
-assert.ok(
-  (await readFile(join(output, '_headers'), 'utf8')).includes('X-Content-Type-Options: nosniff'),
+const headers = await readFile(join(output, '_headers'), 'utf8');
+const globalHeaderBlock = headers.match(/^\/\*\r?\n((?:[ \t]+[^\r\n]*(?:\r?\n|$))*)/m)?.[1] ?? '';
+const globalHeaders = new Map(
+  globalHeaderBlock.trim().split(/\r?\n/).filter(Boolean).map((line) => {
+    const separator = line.indexOf(':');
+    return [line.slice(0, separator).trim().toLowerCase(), line.slice(separator + 1).trim()];
+  }),
 );
+assert.equal(globalHeaders.get('x-content-type-options'), 'nosniff');
+const contentSecurityPolicy = globalHeaders.get('content-security-policy') ?? '';
+for (const [directive, value] of [
+  ['object-src', "'none'"],
+  ['base-uri', "'self'"],
+  ['frame-ancestors', "'none'"],
+  ['form-action', "'self'"],
+]) {
+  assert.match(
+    contentSecurityPolicy,
+    new RegExp(`(?:^|;)\\s*${directive}\\s+${value}\\s*(?:;|$)`, 'i'),
+    `Missing global Content-Security-Policy directive: ${directive} ${value}`,
+  );
+}
+const strictTransportSecurity = globalHeaders.get('strict-transport-security') ?? '';
+assert.match(strictTransportSecurity, /(?:^|;)\s*max-age\s*=\s*15552000\s*(?:;|$)/i);
+assert.doesNotMatch(strictTransportSecurity, /(?:^|;)\s*(?:includesubdomains|preload)\s*(?:;|$)/i);
 const functionRoutes = JSON.parse(await readFile(join(output, '_routes.json'), 'utf8'));
 assert.deepEqual(functionRoutes, { version: 1, include: ['/api/*'], exclude: [] });
 for (const endpoint of ['functions/api/forms.ts', 'functions/api/forms/config.ts']) {
@@ -202,6 +224,16 @@ async function verifyFileLimits(directory) {
   let count = 0;
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
+    const name = entry.name.toLowerCase();
+    // Catch accidental private/source paths; file contents still need separate review.
+    const privateDirectory = ['.git', '.wrangler', 'node_modules'].includes(name);
+    const privateOrSourceFile = /^(?:\.env|\.dev\.vars)/.test(name)
+      || name === '.npmrc'
+      || /\.(?:pem|key|p12|pfx|ts|map)$/.test(name);
+    assert.ok(
+      !privateDirectory && !privateOrSourceFile,
+      `Private or source artifact must not be deployed: ${relative(output, path)}`,
+    );
     if (entry.isDirectory()) count += await verifyFileLimits(path);
     else {
       assert.ok(
