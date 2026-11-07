@@ -139,24 +139,64 @@
             </label>
           </div>
 
-          <div class="contact-field">
+          <div #socialField class="contact-field podcast-social" (keydown)="handleSocialKeydown($event)">
             <input
-              id="podcast-topic"
-              class="contact-field__control"
-              name="topic"
+              #socialProfileField
+              id="podcast-social-profile"
+              class="contact-field__control podcast-social__input"
+              name="socialProfile"
               type="text"
               maxlength="160"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
               required
               placeholder=" "
+              aria-describedby="podcast-social-hint"
             />
-            <label class="contact-field__label" for="podcast-topic">
-              Topic or idea<span aria-hidden="true">*</span>
+            <label class="contact-field__label" for="podcast-social-profile">
+              Social media<span aria-hidden="true">*</span>
             </label>
+            <span class="visually-hidden" id="podcast-social-hint">
+              Enter your username. Use the icon on the right to choose YouTube, Instagram or TikTok.
+            </span>
+            <input type="hidden" name="socialNetwork" [value]="socialNetwork.value" />
+            <button
+              #socialNetworkTrigger
+              id="podcast-social-network"
+              class="podcast-social__trigger"
+              type="button"
+              aria-haspopup="menu"
+              [attr.aria-label]="'Social network: ' + socialNetwork.label"
+              [attr.aria-expanded]="socialMenuOpen"
+              [attr.aria-controls]="socialMenuOpen ? 'podcast-social-options' : null"
+              (click)="toggleSocialMenu()"
+            >
+              <img [src]="socialNetwork.icon" alt="" aria-hidden="true" width="22" height="22" />
+              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 4.5 3 3 3-3" /></svg>
+            </button>
+            @if (socialMenuOpen) {
+              <div id="podcast-social-options" class="podcast-social__options" role="menu" aria-label="Social network">
+                @for (network of socialNetworks; track network.value) {
+                  <button
+                    class="podcast-social__option"
+                    type="button"
+                    role="menuitemradio"
+                    [attr.aria-checked]="socialNetwork.value === network.value"
+                    (click)="selectSocialNetwork(network)"
+                  >
+                    <span>{{ network.label }}</span>
+                    <img [src]="network.icon" alt="" aria-hidden="true" width="22" height="22" />
+                  </button>
+                }
+              </div>
+            }
           </div>
         </div>
 
         <div class="contact-field contact-field--message">
           <textarea
+            #applicationMessageField
             id="podcast-message"
             class="contact-field__control contact-field__textarea"
             name="message"

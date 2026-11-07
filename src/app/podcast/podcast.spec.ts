@@ -93,4 +93,108 @@ describe('Podcast application preview', () => {
     await fixture.whenStable();
     expect(page.querySelector('[role="status"]')?.textContent).toContain('Nothing has been sent.');
   });
+
+  it('changes the social network without losing the username or submitting, and resets a closed application', async () => {
+    const page = await openApplication();
+    const profile = page.querySelector<HTMLInputElement>('#podcast-social-profile')!;
+    const trigger = page.querySelector<HTMLButtonElement>('#podcast-social-network')!;
+    const form = page.querySelector<HTMLFormElement>('form')!;
+    let submissions = 0;
+    form.addEventListener('submit', () => submissions++);
+    profile.value = '@creative_guest';
+    profile.dispatchEvent(new Event('input', { bubbles: true }));
+
+    trigger.click();
+    await fixture.whenStable();
+    const options = Array.from(page.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]'));
+    expect(options.map((option) => option.textContent?.trim())).toEqual(['YouTube', 'Instagram', 'TikTok']);
+    options[1].click();
+    await fixture.whenStable();
+
+    expect(profile.value).toBe('@creative_guest');
+    expect(trigger.getAttribute('aria-label')).toContain('Instagram');
+    expect(trigger.querySelector('img')!.getAttribute('src')).toBe('/instagram-2016-logo-svgrepo-com.svg');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(trigger);
+    expect(submissions).toBe(0);
+    const data = new window.FormData(form);
+    expect(data.get('socialProfile')).toBe('@creative_guest');
+    expect(data.get('socialNetwork')).toBe('instagram');
+
+    trigger.click();
+    await fixture.whenStable();
+    const selected = page.querySelector<HTMLButtonElement>('[role="menuitemradio"][aria-checked="true"]')!;
+    expect(selected.textContent).toContain('Instagram');
+    expect(document.activeElement).toBe(selected);
+    page.querySelector<HTMLButtonElement>('.podcast-dialog-close')!.click();
+    await fixture.whenStable();
+    await openApplication();
+    expect(page.querySelector<HTMLInputElement>('#podcast-social-profile')!.value).toBe('');
+    expect(page.querySelector('#podcast-social-network')!.getAttribute('aria-label')).toContain('YouTube');
+    expect(page.querySelector('[role="menu"]')).toBeNull();
+    expect(new window.FormData(page.querySelector<HTMLFormElement>('form')!).get('socialNetwork')).toBe('youtube');
+  });
+
+  it('navigates social options with the keyboard and dismisses the menu before the dialog with Escape', async () => {
+    const page = await openApplication();
+    const trigger = page.querySelector<HTMLButtonElement>('#podcast-social-network')!;
+    trigger.focus();
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+    const options = Array.from(page.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]'));
+    expect(document.activeElement).toBe(options[0]);
+
+    for (const [key, expected] of [['ArrowDown', 1], ['End', 2], ['Home', 0], ['ArrowUp', 2]] as const) {
+      document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+      expect(document.activeElement).toBe(options[expected]);
+    }
+    // Enter/Space activation of these native buttons is exercised in browser QA;
+    // jsdom does not synthesize their default click from a dispatched key event.
+    (document.activeElement as HTMLButtonElement).click();
+    await fixture.whenStable();
+    expect(trigger.getAttribute('aria-label')).toContain('TikTok');
+
+    trigger.click();
+    await fixture.whenStable();
+    const menuEscape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    document.activeElement!.dispatchEvent(menuEscape);
+    await fixture.whenStable();
+    expect(menuEscape.defaultPrevented).toBe(true);
+    expect(page.querySelector('[role="menu"]')).toBeNull();
+    expect(page.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+    expect(page.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.activeElement).toBe(page.querySelector('.podcast-primary'));
+  });
+
+  it('leaves the social menu in either Tab direction and dismisses outside without cancelling normal pointer actions', async () => {
+    const page = await openApplication();
+    const trigger = page.querySelector<HTMLButtonElement>('#podcast-social-network')!;
+    const profile = page.querySelector<HTMLInputElement>('#podcast-social-profile')!;
+    const message = page.querySelector<HTMLTextAreaElement>('#podcast-message')!;
+
+    for (const shiftKey of [false, true]) {
+      trigger.click();
+      await fixture.whenStable();
+      document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Tab', shiftKey, bubbles: true, cancelable: true,
+      }));
+      await fixture.whenStable();
+      expect(page.querySelector('[role="menu"]')).toBeNull();
+      expect(document.activeElement).toBe(shiftKey ? profile : message);
+      expect(page.querySelector('[role="dialog"]')).not.toBeNull();
+    }
+
+    trigger.click();
+    await fixture.whenStable();
+    const pointer = new Event('pointerdown', { bubbles: true, cancelable: true });
+    message.dispatchEvent(pointer);
+    await fixture.whenStable();
+    expect(pointer.defaultPrevented).toBe(false);
+    expect(page.querySelector('[role="menu"]')).toBeNull();
+    expect(page.querySelector('[role="dialog"]')).not.toBeNull();
+  });
 });
