@@ -29,7 +29,7 @@ describe('SubmissionNotificationService', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('lets the visitor dismiss a notification and cancels its pending timer', () => {
+  it('clears a notification and its pending timer when dismissed', () => {
     notification.show('podcast');
     vi.advanceTimersByTime(500);
 

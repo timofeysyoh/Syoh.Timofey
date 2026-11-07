@@ -34,8 +34,6 @@ export class SubmissionProgress {
   verificationContainer!: ElementRef<HTMLElement>;
   @ViewChild('progressDialog', { static: true })
   private progressDialog!: ElementRef<HTMLDialogElement>;
-  @ViewChild('cancelButton', { static: true })
-  private cancelButton!: ElementRef<HTMLButtonElement>;
 
   constructor() {
     afterRenderEffect(() => {
@@ -47,7 +45,7 @@ export class SubmissionProgress {
         // The top layer keeps the spinner and any interactive Turnstile
         // challenge accessible while the form behind it becomes inert.
         dialog.showModal();
-        this.cancelButton.nativeElement.focus({ preventScroll: true });
+        dialog.focus({ preventScroll: true });
       } else if (!pending && dialog.open) {
         dialog.close();
       }

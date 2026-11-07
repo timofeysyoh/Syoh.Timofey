@@ -41,9 +41,6 @@ export class SubmissionNotificationService {
             <svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-8" /></svg>
           </span>
           <p>{{ kind === 'podcast' ? 'Application sent' : 'Message sent' }}</p>
-          <button class="submission-toast__close" type="button" aria-label="Dismiss notification" (click)="notification.dismiss()">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
-          </button>
         </aside>
       }
     </div>

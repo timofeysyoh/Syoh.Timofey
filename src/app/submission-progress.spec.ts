@@ -53,12 +53,13 @@ describe('SubmissionProgress', () => {
   }
 
   it('opens a focused modal only during submission and closes it when pending ends', async () => {
+    const focus = vi.spyOn(dialog, 'focus');
     expect(dialog.open).toBe(false);
     expect(showModal).not.toHaveBeenCalled();
     await beginSubmission();
     expect(dialog.open).toBe(true);
     expect(showModal).toHaveBeenCalledOnce();
-    expect(document.activeElement).toBe(dialog.querySelector('button'));
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
     expect(dialog.textContent).toContain('Preparing your message');
 
     delivery.phase.set('sending');
@@ -96,7 +97,7 @@ describe('SubmissionProgress', () => {
     expect(dialog.textContent).toContain('Sending your application');
   });
 
-  it('delegates both native cancellation and the cancel button to the parent', async () => {
+  it('delegates native cancellation to the parent without a close button', async () => {
     const cancelled = vi.fn();
     fixture.componentInstance.cancelled.subscribe(cancelled);
     await beginSubmission();
@@ -104,8 +105,7 @@ describe('SubmissionProgress', () => {
     dialog.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
     expect(cancelled).toHaveBeenCalledOnce();
-    dialog.querySelector<HTMLButtonElement>('button')!.click();
-    expect(cancelled).toHaveBeenCalledTimes(2);
+    expect(dialog.querySelector('button')).toBeNull();
   });
 
   it('closes an active native dialog when the form is destroyed', async () => {

@@ -1019,36 +1019,6 @@
   background: rgb(44 49 54 / 72%);
 }
 
-.submission-progress__close,
-.submission-toast__close {
-  display: grid;
-  width: 2rem;
-  height: 2rem;
-  flex: 0 0 2rem;
-  place-items: center;
-  padding: 0;
-  border: 1px solid rgb(255 255 255 / 60%);
-  border-radius: 50%;
-  background: rgb(255 255 255 / 25%);
-  color: #555c61;
-  cursor: pointer;
-}
-
-.submission-progress__close {
-  position: absolute;
-  top: 0.65rem;
-  right: 0.65rem;
-}
-
-.submission-progress__close svg,
-.submission-toast__close svg {
-  width: 0.9rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-width: 1.8;
-}
-
 .submission-progress__spinner {
   width: 2.8rem;
   height: 2.8rem;

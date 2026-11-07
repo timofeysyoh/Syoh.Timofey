@@ -275,7 +275,7 @@ describe('Home deferred contact panel', () => {
     expect(page.querySelector('.contact-panel')!.getAttribute('aria-busy')).toBe('true');
     expect(page.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(true);
 
-    progress.querySelector<HTMLButtonElement>('.submission-progress__close')!.click();
+    progress.dispatchEvent(new Event('cancel', { cancelable: true }));
     await fixture.whenStable();
     expect(page.querySelector('form')).toBeNull();
     expect(page.querySelector('main')!.hasAttribute('inert')).toBe(false);
