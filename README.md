@@ -29,7 +29,7 @@ npm start
 npm run build:hosting
 ```
 
-Команда виконує production-збірку Angular, npm-хук `postbuild` і перевірку результату. Готова папка для завантаження: **`dist/syohtimofey/browser`**. Перевірити вже створену збірку окремо можна через `npm run check:hosting`. Для публікації використовуйте саме `npm run build:hosting`: прямий `ng build` оминає npm-хук, який готує інформаційні сторінки без Angular bootstrap.
+Команда перевіряє TypeScript Functions і виконує production-збірку Angular. Npm-хук `postbuild` готує інформаційні сторінки та перевіряє результат, зокрема захисні заголовки й типові приватні файли в папці публікації; цей хук запускається також зі звичайним `npm run build`. Готова папка для завантаження: **`dist/syohtimofey/browser`**. Перевірити вже створену збірку окремо можна через `npm run check:hosting`. Для публікації використовуйте `npm run build:hosting`: прямий `ng build` оминає npm-хук.
 
 Увімкнено `outputMode: "static"` і пререндеринг сторінок. Dancing Script розміщено локально в `public/fonts/` разом із ліцензією OFL; `font-display: swap` дозволяє одразу показати текст. Збірка й відвідувачі не звертаються до Google Fonts.
 
