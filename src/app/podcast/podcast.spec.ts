@@ -1,14 +1,38 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, DeferBlockBehavior, DeferBlockState, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { signal } from '@angular/core';
 import { Podcast } from './podcast';
+import { PodcastApplication } from './application/podcast-application';
+import { FormSubmission } from '../form-submission';
 
-describe('Podcast application preview', () => {
+describe('Podcast application', () => {
   let fixture: ComponentFixture<Podcast>;
+  let deliveries: ReturnType<typeof createDeliveryMock>[];
+
+  function createDeliveryMock() {
+    return {
+      pending: signal(false),
+      sent: signal(false),
+      notice: signal(''),
+      error: signal(false),
+      submit: vi.fn(async (_form: HTMLFormElement, _kind: string, _container: HTMLElement) => {}),
+    };
+  }
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
+    deliveries = [];
+    TestBed.overrideComponent(PodcastApplication, {
+      set: { providers: [{ provide: FormSubmission, useFactory: () => {
+        const delivery = createDeliveryMock();
+        deliveries.push(delivery);
+        return delivery;
+      } }] },
+    });
     await TestBed.configureTestingModule({
       imports: [Podcast],
       providers: [provideRouter([])],
+      deferBlockBehavior: DeferBlockBehavior.Manual,
     }).compileComponents();
     fixture = TestBed.createComponent(Podcast);
     fixture.detectChanges();
@@ -20,6 +44,11 @@ describe('Podcast application preview', () => {
     const page = fixture.nativeElement as HTMLElement;
     page.querySelector<HTMLButtonElement>('.podcast-primary')!.click();
     await fixture.whenStable();
+    if (!page.querySelector('.podcast-application')) {
+      const [block] = await fixture.getDeferBlocks();
+      await block.render(DeferBlockState.Complete);
+      await fixture.whenStable();
+    }
     return page;
   }
 
@@ -32,14 +61,16 @@ describe('Podcast application preview', () => {
     await openApplication();
     const dialog = page.querySelector<HTMLElement>('[role="dialog"]')!;
     const close = dialog.querySelector<HTMLButtonElement>('.podcast-dialog-close')!;
-    const privacy = dialog.querySelector<HTMLAnchorElement>('a')!;
+    const send = dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!;
     const name = dialog.querySelector<HTMLInputElement>('#podcast-name')!;
     const message = dialog.querySelector<HTMLTextAreaElement>('#podcast-message')!;
+    const consent = dialog.querySelector<HTMLInputElement>('#podcast-consent')!;
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(background.hasAttribute('inert')).toBe(true);
     expect(document.activeElement).toBe(name);
 
     name.value = 'Guest';
+    consent.checked = true;
     message.value = 'A conversation idea';
     message.dispatchEvent(new Event('input', { bubbles: true }));
     await fixture.whenStable();
@@ -48,9 +79,9 @@ describe('Podcast application preview', () => {
     const backwards = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
     close.dispatchEvent(backwards);
     expect(backwards.defaultPrevented).toBe(true);
-    expect(document.activeElement).toBe(privacy);
+    expect(document.activeElement).toBe(send);
     const forwards = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
-    privacy.dispatchEvent(forwards);
+    send.dispatchEvent(forwards);
     expect(forwards.defaultPrevented).toBe(true);
     expect(document.activeElement).toBe(close);
 
@@ -65,6 +96,7 @@ describe('Podcast application preview', () => {
     await openApplication();
     expect(page.querySelector<HTMLInputElement>('#podcast-name')!.value).toBe('');
     expect(page.querySelector<HTMLTextAreaElement>('#podcast-message')!.value).toBe('');
+    expect(page.querySelector<HTMLInputElement>('#podcast-consent')!.checked).toBe(false);
     expect(page.querySelector('#podcast-message-count')!.textContent).toContain('0/1500');
 
     // Native resize/focus gestures inside the dialog must not be cancelled by its backdrop.
@@ -80,18 +112,67 @@ describe('Podcast application preview', () => {
     expect(page.querySelector('[role="dialog"]')).toBeNull();
   });
 
-  it('prevents native submission and explicitly reports that an unavailable application was not sent', async () => {
+  it('delegates delivery, disables pending and sent submissions, and displays recoverable delivery errors', async () => {
     const page = await openApplication();
     const form = page.querySelector<HTMLFormElement>('form')!;
     const submit = page.querySelector<HTMLButtonElement>('button[type="submit"]')!;
-    expect(submit.disabled).toBe(true);
+    const delivery = deliveries[0];
+    expect(submit.disabled).toBe(false);
+    delivery.submit.mockImplementation(async () => {
+      delivery.pending.set(true);
+      delivery.notice.set('Sending your application…');
+    });
 
-    // Even a manually dispatched submit must not navigate or leak form values in a GET request.
+    // Even a manually dispatched submit must not leak values in a native GET request.
     const event = new Event('submit', { bubbles: true, cancelable: true });
     expect(form.dispatchEvent(event)).toBe(false);
     expect(event.defaultPrevented).toBe(true);
     await fixture.whenStable();
-    expect(page.querySelector('[role="status"]')?.textContent).toContain('Nothing has been sent.');
+    expect(delivery.submit).toHaveBeenCalledWith(form, 'podcast', page.querySelector('.contact-form__verification'));
+    expect(submit.disabled).toBe(true);
+    expect(submit.getAttribute('aria-busy')).toBe('true');
+    expect(submit.textContent).toContain('Sending');
+
+    delivery.pending.set(false);
+    delivery.error.set(true);
+    delivery.notice.set('We could not confirm delivery. Please try again.');
+    await fixture.whenStable();
+    expect(submit.disabled).toBe(false);
+    expect(page.querySelector('[role="alert"]')?.textContent).toContain('try again');
+
+    delivery.submit.mockImplementation(async () => {
+      delivery.error.set(false);
+      delivery.sent.set(true);
+      delivery.notice.set('Your application has been sent.');
+    });
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+    expect(submit.disabled).toBe(true);
+    expect(submit.textContent).toContain('Application sent');
+    expect(page.querySelector('[role="status"]')?.textContent).toContain('has been sent');
+    expect(page.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('requires an unchecked acknowledgement and lets the guest read terms without replacing the application', async () => {
+    const page = await openApplication();
+    const form = page.querySelector<HTMLFormElement>('form')!;
+    page.querySelector<HTMLInputElement>('#podcast-name')!.value = 'Guest';
+    page.querySelector<HTMLInputElement>('#podcast-email')!.value = 'guest@example.com';
+    page.querySelector<HTMLSelectElement>('#podcast-interest')!.value = 'guest';
+    page.querySelector<HTMLInputElement>('#podcast-social-profile')!.value = '@guest';
+    page.querySelector<HTMLTextAreaElement>('#podcast-message')!.value = 'A conversation about creating music.';
+
+    const consent = page.querySelector<HTMLInputElement>('#podcast-consent')!;
+    expect(consent.checked).toBe(false);
+    expect(consent.validity.valueMissing).toBe(true);
+    expect(form.checkValidity()).toBe(false);
+    consent.checked = true;
+    expect(form.checkValidity()).toBe(true);
+
+    const terms = page.querySelector<HTMLAnchorElement>('.contact-consent a')!;
+    expect(new URL(terms.href).pathname).toMatch(/^\/podcast\/terms\/?$/);
+    expect(terms.target).toBe('_blank');
+    expect(terms.relList.contains('noopener')).toBe(true);
   });
 
   it('changes the social network without losing the username or submitting, and resets a closed application', async () => {
@@ -196,5 +277,47 @@ describe('Podcast application preview', () => {
     expect(pointer.defaultPrevented).toBe(false);
     expect(page.querySelector('[role="menu"]')).toBeNull();
     expect(page.querySelector('[role="dialog"]')).not.toBeNull();
+  });
+
+  it('can close pending and failed form loading without leaving the page inert', async () => {
+    const page = fixture.nativeElement as HTMLElement;
+    const trigger = page.querySelector<HTMLButtonElement>('.podcast-primary')!;
+    const background = page.querySelector('main')!;
+    trigger.click();
+    await fixture.whenStable();
+    const [block] = await fixture.getDeferBlocks();
+    await block.render(DeferBlockState.Loading);
+    await fixture.whenStable();
+
+    expect(page.querySelector('form')).toBeNull();
+    expect(page.querySelector('[aria-busy="true"]')).not.toBeNull();
+    expect(background.hasAttribute('inert')).toBe(true);
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'Escape', bubbles: true, cancelable: true,
+    }));
+    await fixture.whenStable();
+    expect(background.hasAttribute('inert')).toBe(false);
+    expect(page.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.click();
+    await fixture.whenStable();
+    await block.render(DeferBlockState.Error);
+    await fixture.whenStable();
+    expect(page.querySelector('[role="alert"]')?.textContent).toContain('could not be loaded');
+    const reload = page.querySelector<HTMLAnchorElement>('[role="alert"] a')!;
+    expect(reload.getAttribute('href')).toBe('/podcast/');
+    const close = page.querySelector<HTMLButtonElement>('.podcast-dialog-close')!;
+    expect(document.activeElement).toBe(close);
+    const backwards = new KeyboardEvent('keydown', {
+      key: 'Tab', shiftKey: true, bubbles: true, cancelable: true,
+    });
+    close.dispatchEvent(backwards);
+    expect(backwards.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(reload);
+    close.click();
+    await fixture.whenStable();
+    expect(background.hasAttribute('inert')).toBe(false);
+    expect(page.querySelector('[role="dialog"]')).toBeNull();
   });
 });

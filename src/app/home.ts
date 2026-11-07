@@ -7,14 +7,16 @@ import {
   ElementRef,
   HostListener,
   inject,
+  Injector,
   NgZone,
   ViewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ContactPanel } from './contact-panel/contact-panel';
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink],
+  imports: [RouterLink, ContactPanel],
   templateUrl: './app.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -22,18 +24,27 @@ export class Home {
   private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly zone = inject(NgZone);
+  private readonly injector = inject(Injector);
 
   @ViewChild('pageScroller') private pageScroller?: ElementRef<HTMLElement>;
   @ViewChild('brandTitle') private brandTitle?: ElementRef<HTMLElement>;
   @ViewChild('contactTrigger') private contactTrigger?: ElementRef<HTMLButtonElement>;
-  @ViewChild('contactPanel') private contactPanel?: ElementRef<HTMLElement>;
-  @ViewChild('contactFirstField') private contactFirstField?: ElementRef<HTMLInputElement>;
+  private contactLoadShellPanel?: ElementRef<HTMLElement>;
+  @ViewChild('contactLoadShell')
+  private set contactLoadShell(panel: ElementRef<HTMLElement> | undefined) {
+    this.contactLoadShellPanel = panel;
+    if (!panel) return;
+    afterNextRender(() => {
+      if (this.contactPanelOpen && panel.nativeElement.isConnected) {
+        panel.nativeElement.focus();
+      }
+    }, { injector: this.injector });
+  }
 
   brandCompact = false;
+  readonly showAdditionalProjects = false;
   updatesExpanded = false;
   contactPanelOpen = false;
-  contactMessageLength = 0;
-  contactFormNotice = false;
 
   constructor() {
     afterNextRender(() => {
@@ -98,66 +109,33 @@ export class Home {
 
   openContactPanel(): void {
     this.contactPanelOpen = true;
-    this.contactFormNotice = false;
-
-    window.setTimeout(() => {
-      this.contactFirstField?.nativeElement.focus();
-    });
   }
 
   closeContactPanel(): void {
+    if (!this.contactPanelOpen) return;
     this.contactPanelOpen = false;
-    this.contactMessageLength = 0;
-    this.contactFormNotice = false;
-
-    window.setTimeout(() => {
-      this.contactTrigger?.nativeElement.focus();
-    });
+    afterNextRender(() => {
+      if (!this.contactPanelOpen) this.contactTrigger?.nativeElement.focus();
+    }, { injector: this.injector });
   }
 
-  trapContactFocus(event: KeyboardEvent): void {
-    if (event.key !== 'Tab') {
-      return;
-    }
+  trapContactLoadFocus(event: KeyboardEvent): void {
+    if (event.key !== 'Tab') return;
+    const panel = this.contactLoadShellPanel?.nativeElement;
+    if (!panel) return;
+    const elements = Array.from(panel.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]'));
+    const first = elements[0];
+    const last = elements[elements.length - 1];
+    const active = panel.ownerDocument.activeElement;
+    if (!first || !last) return;
 
-    const panel = this.contactPanel?.nativeElement;
-
-    if (!panel) {
-      return;
-    }
-
-    const focusableElements = Array.from(
-      panel.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-      ),
-    ).filter((element) => !element.hasAttribute('hidden'));
-
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-
-    if (!firstElement || !lastElement) {
-      return;
-    }
-
-    if (event.shiftKey && document.activeElement === firstElement) {
+    if (event.shiftKey && (active === first || active === panel)) {
       event.preventDefault();
-      lastElement.focus();
-      return;
-    }
-
-    if (!event.shiftKey && document.activeElement === lastElement) {
+      last.focus();
+    } else if (!event.shiftKey && (active === last || active === panel)) {
       event.preventDefault();
-      firstElement.focus();
+      first.focus();
     }
-  }
-
-  updateContactMessageLength(event: Event): void {
-    this.contactMessageLength = (event.target as HTMLTextAreaElement).value.length;
-  }
-
-  submitContactForm(event: SubmitEvent): void {
-    event.preventDefault();
-    this.contactFormNotice = true;
   }
 
   @HostListener('document:keydown.escape', ['$event'])

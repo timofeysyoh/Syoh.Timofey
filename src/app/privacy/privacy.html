@@ -1,6 +1,6 @@
 <main class="privacy-page">
-  <article class="privacy-column" aria-labelledby="privacy-title">
-    <span class="privacy-texture" aria-hidden="true"></span>
+  <article class="content-surface privacy-column" aria-labelledby="privacy-title">
+    <span class="frosted-glass-texture" aria-hidden="true"></span>
 
     <a class="privacy-back" routerLink="/" aria-label="Return to the home page">
       <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -12,15 +12,29 @@
     <header class="privacy-header">
       <p class="privacy-brand">Syoh Timofey</p>
       <h1 id="privacy-title">Privacy Policy</h1>
-      <p class="privacy-updated">Updated November 6, 2026</p>
+      <p class="privacy-updated">Updated November 7, 2026</p>
     </header>
 
     <div class="privacy-content">
       <section>
+        <h2>Website operator and scope</h2>
+        <p>
+          This website is operated by Syoh Timofey (Сьох Тимофій). For privacy
+          questions or requests about your personal information, email
+          <a href="mailto:timofeysyoh@gmail.com">timofeysyoh@gmail.com</a>.
+          This policy describes the website as it currently works. The website
+          does not currently collect payments, record audio or video, or accept
+          uploads of podcast recordings.
+        </p>
+      </section>
+
+      <section>
         <h2>In brief</h2>
         <p>
-          The contact and podcast application forms are local previews and do not
-          send messages or applications.
+          When message delivery is enabled, submitting the contact or podcast
+          application form sends your information to the organiser by email
+          through Cloudflare and Resend. If delivery is unavailable, the form
+          reports an error instead of confirming a submission.
           Cloudflare hosts this website and provides browser performance
           measurements, as described below. This website does not provide visitor
           accounts or use advertising systems.
@@ -30,13 +44,52 @@
       <section>
         <h2>Data that may be processed</h2>
         <p>
-          The forms include fields for contact details and a message or podcast
-          proposal. The contact panel also includes an optional phone number.
-          Values entered into these previews stay in your browser and are not
-          sent to or stored by this website. The
-          hosting provider may automatically process technical request logs,
+          The Contact form includes your name, email, purpose of contact,
+          optional phone number, message and confirmation checkbox. The podcast
+          form includes your name, email, type of request, social media username,
+          selected network, message and a checkbox confirming accuracy and that
+          you have read the Podcast Terms. Information you enter stays in the
+          form until you submit it. Submission sends the relevant fields and
+          checkbox confirmation for handling your enquiry or reviewing your
+          application. This website does not save form values in cookies or
+          browser storage. The hosting provider may automatically process technical request logs,
           including an IP address, browser type, and the date and time of a request,
           to maintain security and reliable website operation.
+        </p>
+      </section>
+
+      <section>
+        <h2>Form delivery and spam protection</h2>
+        <p>
+          A Cloudflare Pages Function validates submitted fields and uses
+          Cloudflare Turnstile to help prevent automated abuse. The Turnstile
+          script is requested when you attempt to send a form, rather than when
+          you first open the page or form. Cloudflare processes verification
+          signals such as IP address, browser information and the site involved,
+          as explained in its
+          <a href="https://www.cloudflare.com/turnstile-privacy-policy/">Turnstile Privacy Addendum</a>.
+          Verification does not subscribe you to a mailing list.
+        </p>
+        <p>
+          After validation, Resend processes the email for delivery to the
+          organiser's Gmail mailbox at timofeysyoh@gmail.com. Your email address
+          is used as the reply address so the organiser can respond directly.
+          The website does not send an automatic confirmation email to you.
+          A success message means the email service accepted the message for
+          delivery; it does not guarantee inbox placement or a reply. An error
+          can occur after a request has reached a service, so a missing success
+          message is not a guarantee that no data was processed.
+        </p>
+        <p>
+          These providers may process message content and technical records,
+          including outside your country, under their service arrangements.
+          See
+          <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare's Privacy Policy</a>,
+          <a href="https://resend.com/legal/privacy-policy">Resend's Privacy Policy</a>
+          and <a href="https://policies.google.com/privacy">Google's Privacy Policy</a>.
+          The form handler does not write submitted message contents to
+          application logs, but providers may keep their own delivery, security
+          and service records.
         </p>
       </section>
 
@@ -75,22 +128,63 @@
       <section>
         <h2>External platforms</h2>
         <p>
-          The Podcast card opens another page on this website. This website does
-          not load embedded audio or video players from external platforms.
-          Platform links, when available, open the respective external websites,
-          whose own privacy policies apply.
+          Social media and podcast platform icons are image files served by this
+          website. Displaying them does not contact those platforms or load an
+          embedded player. These icons are not currently external platform links.
+          The Podcast card and Podcast Terms link open pages on this website.
+          External documentation links in this policy open other websites, whose
+          own privacy policies apply.
         </p>
       </section>
 
       <section>
         <h2>Contact and podcast applications</h2>
         <p>
-          The form previews do not currently transmit form values or deliver
-          messages or applications. Closing either form panel clears its values.
-          Leaving the podcast page or reloading the page also clears form values.
-          Before delivery is enabled, this policy will
-          be updated with information about how messages and applications are
-          processed.
+          We use submitted information to respond to contact enquiries, consider
+          guest suggestions and podcast applications, and discuss a requested
+          service or collaboration. The website does not maintain a separate
+          application database. Accepted messages, including the checkbox
+          acknowledgement, can be retained in the organiser's mailbox and in
+          delivery-provider records. Closing the form removes its fields from
+          the page; it does not withdraw an email already submitted. Your
+          browser's own autofill or synchronisation features may retain
+          information independently. The podcast checkbox is not permission to
+          record or publish a guest; recording permissions must be agreed
+          separately as described in the <a routerLink="/podcast/terms/">Podcast Terms</a>.
+          An application is not a confirmed booking or payment agreement.
+        </p>
+        <p>
+          The organiser retains correspondence while needed to handle the
+          enquiry or application, follow up an agreed arrangement and meet
+          applicable legal obligations. Afterwards it is kept only where a
+          legal retention obligation or necessary legal-claim purpose requires
+          it; otherwise it is deleted. Provider-controlled records are subject
+          to the providers' retention arrangements. Please do not include
+          sensitive information, another person's private details or material
+          that is unnecessary for the request.
+        </p>
+      </section>
+
+      <section>
+        <h2>Privacy requests</h2>
+        <p>
+          Contact <a href="mailto:timofeysyoh@gmail.com">timofeysyoh@gmail.com</a>
+          about access, correction, deletion or other privacy requests concerning
+          information actually processed by the website operator. Rights to
+          object, restrict processing, withdraw consent or complain to a data
+          protection authority apply where provided by the relevant law. We will
+          handle requests under that law. If you email us, your address and the
+          contents of your request are sent to the organiser's Gmail mailbox to
+          handle your enquiry, whether you write directly or use an enabled
+          form.
+          Correspondence is used to respond and meet applicable legal
+          obligations. It is retained while needed to resolve the request, and
+          afterwards only where a legal retention obligation or a necessary
+          legal-claim purpose requires it; otherwise it is deleted.
+          Information about how Google provides Gmail is available in
+          <a href="https://policies.google.com/privacy">Google's Privacy Policy</a>.
+          Please do not email sensitive information that is unnecessary for your
+          request.
         </p>
       </section>
 

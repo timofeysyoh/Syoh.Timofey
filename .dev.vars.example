@@ -1,0 +1,7 @@
+# Copy to .dev.vars for local Wrangler only. Never commit real keys.
+# Production secrets must be configured in Cloudflare Pages.
+RESEND_API_KEY=""
+FORM_FROM_EMAIL="forms@syohtimofey.com"
+FORM_TO_EMAIL="timofeysyoh@gmail.com"
+TURNSTILE_SITE_KEY=""
+TURNSTILE_SECRET_KEY=""

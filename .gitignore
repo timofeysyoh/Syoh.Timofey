@@ -39,6 +39,12 @@ testem.log
 /typings
 __screenshots__/
 
+# Local Cloudflare secrets and generated Wrangler state.
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+/.wrangler/
+
 # System files
 .DS_Store
 Thumbs.db

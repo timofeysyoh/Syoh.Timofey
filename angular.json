@@ -31,11 +31,19 @@
               {
                 "glob": "**/*",
                 "input": "public",
-                "ignore": ["piano.png", "crypto.png", "руль.png", "мікрофон.png"]
+                "ignore": [
+                  "piano.png",
+                  "crypto.png",
+                  "руль.png",
+                  "мікрофон.png",
+                  "fonts/dancing-script-latin.woff2",
+                  "fonts/README.md"
+                ]
               }
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              "src/app/app.scss"
             ],
             "server": "src/main.server.ts",
             "outputMode": "static"

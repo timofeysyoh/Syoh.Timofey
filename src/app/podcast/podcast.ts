@@ -9,16 +9,11 @@ import {
   ViewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-
-type SocialNetwork = {
-  value: string;
-  label: string;
-  icon: string;
-};
+import { PodcastApplication } from './application/podcast-application';
 
 @Component({
   selector: 'app-podcast',
-  imports: [RouterLink],
+  imports: [RouterLink, PodcastApplication],
   templateUrl: './podcast.html',
   styleUrl: './podcast.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,52 +21,34 @@ type SocialNetwork = {
 export class Podcast {
   private readonly injector = inject(Injector);
   @ViewChild('applicationTrigger') private applicationTrigger?: ElementRef<HTMLButtonElement>;
-  @ViewChild('applicationDialog') private applicationDialog?: ElementRef<HTMLElement>;
-  @ViewChild('applicationFirstField') private applicationFirstField?: ElementRef<HTMLInputElement>;
-  @ViewChild('socialField') private socialField?: ElementRef<HTMLElement>;
-  @ViewChild('socialProfileField') private socialProfileField?: ElementRef<HTMLInputElement>;
-  @ViewChild('socialNetworkTrigger') private socialNetworkTrigger?: ElementRef<HTMLButtonElement>;
-  @ViewChild('applicationMessageField') private applicationMessageField?: ElementRef<HTMLTextAreaElement>;
 
-  // Enable applications only when a real message-delivery transport is connected.
-  readonly applicationDeliveryAvailable = false;
-  readonly socialNetworks: readonly SocialNetwork[] = [
-    { value: 'youtube', label: 'YouTube', icon: '/youtube-color-svgrepo-com.svg' },
-    { value: 'instagram', label: 'Instagram', icon: '/instagram-2016-logo-svgrepo-com.svg' },
-    { value: 'tiktok', label: 'TikTok', icon: '/tiktok-svgrepo-com.svg' },
-  ];
-  socialNetwork = this.socialNetworks[0];
-  socialMenuOpen = false;
+  @ViewChild('pendingApplicationClose')
+  set pendingApplicationClose(reference: ElementRef<HTMLButtonElement> | undefined) {
+    if (!reference) return;
+    afterNextRender(() => {
+      if (this.applicationOpen && reference.nativeElement.isConnected) {
+        reference.nativeElement.focus();
+      }
+    }, { injector: this.injector });
+  }
+
   applicationOpen = false;
-  messageLength = 0;
-  applicationNotice = '';
 
   openApplication(): void {
     this.applicationOpen = true;
-    afterNextRender(() => {
-      if (this.applicationOpen) this.applicationFirstField?.nativeElement.focus();
-    }, { injector: this.injector });
   }
 
   closeApplication(): void {
     this.applicationOpen = false;
-    this.socialMenuOpen = false;
-    this.socialNetwork = this.socialNetworks[0];
-    this.messageLength = 0;
-    this.applicationNotice = '';
     afterNextRender(() => {
       if (!this.applicationOpen) this.applicationTrigger?.nativeElement.focus();
     }, { injector: this.injector });
   }
 
-  trapApplicationFocus(event: KeyboardEvent): void {
+  trapPendingFocus(event: KeyboardEvent): void {
     if (event.key !== 'Tab') return;
-    const panel = this.applicationDialog?.nativeElement;
-    if (!panel) return;
-
-    const elements = Array.from(panel.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-    )).filter((element) => !element.hasAttribute('hidden'));
+    const panel = event.currentTarget as HTMLElement;
+    const elements = Array.from(panel.querySelectorAll<HTMLElement>('button, a[href]'));
     const first = elements[0];
     const last = elements[elements.length - 1];
     const active = panel.ownerDocument.activeElement;
@@ -86,90 +63,10 @@ export class Podcast {
     }
   }
 
-  toggleSocialMenu(): void {
-    if (this.socialMenuOpen) {
-      this.closeSocialMenu();
-      return;
-    }
-
-    this.socialMenuOpen = true;
-    afterNextRender(() => {
-      if (!this.socialMenuOpen) return;
-      const field = this.socialField?.nativeElement;
-      field?.querySelector('#podcast-social-options')
-        ?.scrollIntoView?.({ block: 'nearest' });
-      field?.querySelector<HTMLButtonElement>('[role="menuitemradio"][aria-checked="true"]')
-        ?.focus({ preventScroll: true });
-    }, { injector: this.injector });
-  }
-
-  selectSocialNetwork(network: SocialNetwork): void {
-    this.socialNetwork = network;
-    this.closeSocialMenu(true);
-  }
-
-  closeSocialMenu(restoreFocus = false): void {
-    this.socialMenuOpen = false;
-    if (restoreFocus) this.socialNetworkTrigger?.nativeElement.focus({ preventScroll: true });
-  }
-
-  handleSocialKeydown(event: KeyboardEvent): void {
-    if (!this.socialMenuOpen) {
-      if (event.target === this.socialNetworkTrigger?.nativeElement &&
-          (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
-        event.preventDefault();
-        this.toggleSocialMenu();
-      }
-      return;
-    }
-
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
-      this.closeSocialMenu(true);
-      return;
-    }
-
-    if (event.key === 'Tab') {
-      event.preventDefault();
-      this.closeSocialMenu();
-      const next = event.shiftKey ? this.socialProfileField : this.applicationMessageField;
-      next?.nativeElement.focus();
-      return;
-    }
-
-    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
-    event.preventDefault();
-    const options = Array.from(this.socialField?.nativeElement
-      .querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]') ?? []);
-    if (!options.length) return;
-    const current = options.indexOf(options[0].ownerDocument.activeElement as HTMLButtonElement);
-    const index = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 :
-      (current + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
-    options[index].focus({ preventScroll: true });
-  }
-
-  @HostListener('document:pointerdown', ['$event'])
-  @HostListener('document:focusin', ['$event'])
-  dismissSocialMenuOutside(event: Event): void {
-    if (this.socialMenuOpen && !this.socialField?.nativeElement.contains(event.target as Node)) {
-      this.closeSocialMenu();
-    }
-  }
-
   @HostListener('document:keydown.escape', ['$event'])
   closeApplicationWithEscape(event: Event): void {
-    if (!this.applicationOpen) return;
+    if (!this.applicationOpen || event.defaultPrevented) return;
     event.preventDefault();
     this.closeApplication();
-  }
-
-  updateMessageLength(event: Event): void {
-    this.messageLength = (event.target as HTMLTextAreaElement).value.length;
-  }
-
-  submitApplication(event: Event): void {
-    event.preventDefault();
-    this.applicationNotice = 'Applications are not open yet. Nothing has been sent.';
   }
 }

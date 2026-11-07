@@ -92,7 +92,7 @@ async function optimizePortrait() {
     sharp(sourcePath)
       .rotate()
       .resize(180, 180, { fit: 'cover', position: 'attention' })
-      .png({ compressionLevel: 9 })
+      .png({ compressionLevel: 9, adaptiveFiltering: true })
       .toFile(join(publicDirectory, 'apple-touch-icon.png')),
   );
 

@@ -528,7 +528,7 @@
   display: grid;
   width: max-content;
   max-width: 100%;
-  grid-template-columns: auto auto;
+  grid-template-columns: repeat(3, auto);
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
@@ -538,9 +538,10 @@
   display: flex;
   width: max-content;
   max-width: 100%;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  gap: 0.5rem 1rem;
   margin-top: 1.5rem;
   margin-inline: auto;
 }
@@ -634,7 +635,7 @@
   border-radius: 1.65rem;
   background:
     radial-gradient(circle at 12% 0%, rgb(255 255 255 / 66%), transparent 38%),
-    linear-gradient(145deg, rgb(236 238 240 / 88%), rgb(190 195 199 / 74%));
+    linear-gradient(145deg, rgb(236 238 240), rgb(190 195 199));
   box-shadow:
     inset 0 1px 1px rgb(255 255 255 / 92%),
     inset 0 -1px 2px rgb(61 66 71 / 12%),
@@ -766,8 +767,8 @@
   color: rgb(187 75 75 / 82%);
 }
 
-.contact-field__control:focus + .contact-field__label,
-.contact-field__control:not(:placeholder-shown) + .contact-field__label,
+.contact-field__control:not(select):focus + .contact-field__label,
+.contact-field__control:not(select):not(:placeholder-shown) + .contact-field__label,
 .contact-field__select:valid + .contact-field__label {
   top: 0.52rem;
   color: rgb(45 47 48 / 72%);
@@ -794,12 +795,8 @@
 }
 
 .contact-field--message {
-  --message-max-height: clamp(7.75rem, 24dvh, 12rem);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
-  // Reserve the resize range so the footer and dialog stay in place.
-  height: var(--message-max-height);
 }
 
 .contact-field__textarea {
@@ -807,7 +804,7 @@
   display: block;
   height: 7.75rem;
   min-height: 7.75rem;
-  max-height: var(--message-max-height);
+  max-height: var(--message-max-height, calc(100dvh - 2rem));
   max-width: 100%;
   overflow: auto;
   resize: vertical;
@@ -842,7 +839,8 @@
   line-height: 1.3;
 }
 
-.contact-form__details a {
+.contact-form__details a,
+.contact-consent a {
   color: inherit;
   text-underline-offset: 0.15rem;
 }
@@ -891,6 +889,7 @@
 }
 
 .contact-consent input:focus-visible + .contact-consent__box,
+.contact-consent a:focus-visible,
 .contact-panel__close:focus-visible,
 .contact-form__details a:focus-visible,
 .contact-send:focus-visible {
@@ -1114,7 +1113,7 @@
 
 .media-card__decoration--podcast {
   top: 105%;
-  left: 27%;
+  left: 58%;
   width: 84%;
   opacity: 0.22;
   transform: translate(-50%, -50%);
@@ -1172,6 +1171,10 @@
 
 .notification-container--expanded {
   height: 16.25rem;
+}
+
+.notification-container.notification-container--single {
+  height: 5rem;
 }
 
 .notification-toggle {
@@ -1417,6 +1420,19 @@
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+.contact-form__honeypot {
+  display: none;
+}
+
+.contact-form__verification:empty {
+  display: none;
+}
+
+.contact-form__verification {
+  align-self: center;
+  max-width: 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {

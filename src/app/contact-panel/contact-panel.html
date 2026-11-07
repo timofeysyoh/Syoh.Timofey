@@ -1,0 +1,152 @@
+<div
+  class="contact-panel-backdrop"
+  role="presentation"
+  (pointerdown)="$event.target === $event.currentTarget ? closeContactPanel() : null"
+>
+  <section
+    #contactPanel
+    class="contact-panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="contact-panel-title"
+    aria-describedby="contact-panel-description"
+    (click)="$event.stopPropagation()"
+    (keydown)="trapContactFocus($event)"
+  >
+    <p id="contact-panel-description" class="visually-hidden">
+      Complete the required fields marked with an asterisk. Press Escape to close this panel.
+    </p>
+
+    <header class="contact-panel__header">
+      <div>
+        <p class="contact-panel__eyebrow">Contact panel</p>
+        <h2 id="contact-panel-title">Let’s talk</h2>
+      </div>
+
+      <button
+        class="contact-panel__close"
+        type="button"
+        aria-label="Close contact panel"
+        (click)="closeContactPanel()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18" />
+        </svg>
+      </button>
+    </header>
+
+    <form class="contact-form" (submit)="submitContactForm($event)">
+      <input class="contact-form__honeypot" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
+      <div class="contact-form__grid">
+        <div class="contact-field">
+          <input
+            #contactFirstField
+            id="contact-full-name"
+            class="contact-field__control"
+            name="fullName"
+            type="text"
+            maxlength="100"
+            placeholder=" "
+            autocomplete="name"
+            required
+          />
+          <label class="contact-field__label" for="contact-full-name">
+            Full name<span aria-hidden="true">*</span>
+          </label>
+        </div>
+
+        <div class="contact-field contact-field--select">
+          <select
+            id="contact-purpose"
+            class="contact-field__control contact-field__select"
+            name="purpose"
+            required
+          >
+            <option value="" selected disabled hidden></option>
+            <option value="Ordering a service">Ordering a service</option>
+            <option value="Something else">Something else</option>
+          </select>
+          <label class="contact-field__label" for="contact-purpose">
+            Purpose of the appeal<span aria-hidden="true">*</span>
+          </label>
+        </div>
+
+        <div class="contact-field">
+          <input
+            id="contact-email"
+            class="contact-field__control"
+            name="email"
+            type="email"
+            maxlength="254"
+            placeholder=" "
+            autocomplete="email"
+            required
+          />
+          <label class="contact-field__label" for="contact-email">
+            Email<span aria-hidden="true">*</span>
+          </label>
+        </div>
+
+        <div class="contact-field">
+          <input
+            id="contact-mobile"
+            class="contact-field__control"
+            name="phone"
+            type="tel"
+            maxlength="30"
+            placeholder=" "
+            autocomplete="tel"
+          />
+          <label class="contact-field__label" for="contact-mobile">
+            Mobile number
+          </label>
+        </div>
+      </div>
+
+      <div class="contact-field contact-field--message">
+        <textarea
+          appResizableMessage
+          id="contact-message"
+          class="contact-field__control contact-field__textarea"
+          name="message"
+          placeholder=" "
+          rows="5"
+          maxlength="1500"
+          required
+          (input)="updateContactMessageLength($event)"
+        ></textarea>
+        <label class="contact-field__label" for="contact-message">
+          Describe your intentions<span aria-hidden="true">*</span>
+        </label>
+        <span class="contact-field__counter">{{ contactMessageLength }}/1500</span>
+      </div>
+
+      <div #verificationContainer class="contact-form__verification"></div>
+
+      <div class="contact-form__footer">
+        <label class="contact-consent" for="contact-consent">
+          <input id="contact-consent" name="consent" type="checkbox" required />
+          <span class="contact-consent__box" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="m5 12 4 4L19 6" />
+            </svg>
+          </span>
+          <span>I accept that the statement does not encourage fraud.</span>
+        </label>
+
+        <button class="contact-send" type="submit" [disabled]="delivery.pending() || delivery.sent()" [attr.aria-busy]="delivery.pending()">
+          <span>{{ delivery.pending() ? 'Sending…' : delivery.sent() ? 'Sent' : 'Send' }}</span>
+          <svg class="arrow" viewBox="0 0 38 15" aria-hidden="true">
+            <path d="M10 7.519l-.939-.344h0l.939.344zm14.386-1.205l-.981-.192.981.192zm1.276 5.509l.537.843.148-.094.107-.139-.792-.611zm4.819-4.304l-.385-.923h0l.385.923zm7.227.707a1 1 0 0 0 0-1.414L31.343.448a1 1 0 0 0-1.414 0 1 1 0 0 0 0 1.414l5.657 5.657-5.657 5.657a1 1 0 0 0 1.414 1.414l6.364-6.364zM1 7.519l.554.833.029-.019.094-.061.361-.23 1.277-.77c1.054-.609 2.397-1.32 3.629-1.787.617-.234 1.17-.392 1.623-.455.477-.066.707-.008.788.034.025.013.031.021.039.034a.56.56 0 0 1 .058.235c.029.327-.047.906-.39 1.842l1.878.689c.383-1.044.571-1.949.505-2.705-.072-.815-.45-1.493-1.16-1.865-.627-.329-1.358-.332-1.993-.244-.659.092-1.367.305-2.056.566-1.381.523-2.833 1.297-3.921 1.925l-1.341.808-.385.245-.104.068-.028.018c-.011.007-.011.007.543.84zm8.061-.344c-.198.54-.328 1.038-.36 1.484-.032.441.024.94.325 1.364.319.45.786.64 1.21.697.403.054.824-.001 1.21-.09.775-.179 1.694-.566 2.633-1.014l3.023-1.554c2.115-1.122 4.107-2.168 5.476-2.524.329-.086.573-.117.742-.115s.195.038.161.014c-.15-.105.085-.139-.076.685l1.963.384c.192-.98.152-2.083-.74-2.707-.405-.283-.868-.37-1.28-.376s-.849.069-1.274.179c-1.65.43-3.888 1.621-5.909 2.693l-2.948 1.517c-.92.439-1.673.743-2.221.87-.276.064-.429.065-.492.057-.043-.006.066.003.155.127.07.099.024.131.038-.063.014-.187.078-.49.243-.94l-1.878-.689zm14.343-1.053c-.361 1.844-.474 3.185-.413 4.161.059.95.294 1.72.811 2.215.567.544 1.242.546 1.664.459a2.34 2.34 0 0 0 .502-.167l.15-.076.049-.028.018-.011c.013-.008.013-.008-.524-.852l-.536-.844.019-.012c-.038.018-.064.027-.084.032-.037.008.053-.013.125.056.021.02-.151-.135-.198-.895-.046-.734.034-1.887.38-3.652l-1.963-.384zm2.257 5.701l.791.611.024-.031.08-.101.311-.377 1.093-1.213c.922-.954 2.005-1.894 2.904-2.27l-.771-1.846c-1.31.547-2.637 1.758-3.572 2.725l-1.184 1.314-.341.414-.093.117-.025.032c-.01.013-.01.013.781.624zm5.204-3.381c.989-.413 1.791-.42 2.697-.307.871.108 2.083.385 3.437.385v-2c-1.197 0-2.041-.226-3.19-.369-1.114-.139-2.297-.146-3.715.447l.771 1.846z" />
+          </svg>
+        </button>
+      </div>
+
+      @if (delivery.notice()) {
+        <p class="contact-form__notice" [attr.role]="delivery.error() ? 'alert' : 'status'">
+          {{ delivery.notice() }}
+        </p>
+      }
+    </form>
+  </section>
+</div>

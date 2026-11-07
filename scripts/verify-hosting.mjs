@@ -7,6 +7,7 @@ import { JSDOM } from 'jsdom';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const output = join(root, 'dist/syohtimofey/browser');
 const origin = 'https://syohtimofey.com';
+const staticInformationPaths = new Set(['/privacy/', '/legal/', '/podcast/terms/']);
 const routes = [
   {
     file: 'index.html',
@@ -25,6 +26,18 @@ const routes = [
     path: '/privacy/',
     title: 'Privacy | Syoh Timofey',
     heading: 'Privacy Policy',
+  },
+  {
+    file: 'podcast/terms/index.html',
+    path: '/podcast/terms/',
+    title: 'Podcast Terms | Syoh Timofey',
+    heading: 'Podcast Terms',
+  },
+  {
+    file: 'legal/index.html',
+    path: '/legal/',
+    title: 'Legal Notice | Syoh Timofey',
+    heading: 'Legal Notice',
   },
 ];
 
@@ -59,6 +72,28 @@ for (const route of routes) {
     document.querySelector('h1')?.textContent.includes(route.heading),
     `Route not prerendered: ${route.path}`,
   );
+
+  if (staticInformationPaths.has(route.path)) {
+    assert.equal(
+      [...document.scripts].filter((script) => script.type.trim().toLowerCase() !== 'application/ld+json').length,
+      0,
+      `Read-only information page must not download or execute app JavaScript: ${route.path}`,
+    );
+    assert.equal(document.querySelectorAll('link[rel~="modulepreload"], link[rel~="preload"][as="script"]').length, 0);
+    assert.equal(
+      document.querySelectorAll('form, button, input, select, textarea, [contenteditable]').length,
+      0,
+      `Interactive controls need application JavaScript: ${route.path}`,
+    );
+    for (const anchor of document.querySelectorAll('a')) {
+      const href = anchor.getAttribute('href')?.trim();
+      assert.ok(href, `Read-only page link lacks a native href: ${route.path}`);
+      assert.ok(['http:', 'https:', 'mailto:', 'tel:'].includes(new URL(href, document.baseURI).protocol));
+    }
+    for (const stylesheet of document.querySelectorAll('link[rel~="stylesheet"]')) {
+      assert.equal(stylesheet.hasAttribute('onload'), false, `CSS must load without app JavaScript: ${route.path}`);
+    }
+  }
 
   for (const element of document.querySelectorAll(
     'img[src], script[src], link[rel="stylesheet"][href], link[rel="icon"][href], link[rel="apple-touch-icon"][href]',
@@ -108,19 +143,27 @@ for (const route of routes) {
       /^\/podcast\/?$/,
       'The Podcast card must open the internal podcast page.',
     );
-    for (const platform of ['Instagram', 'X', 'Twitch']) {
+    for (const platform of ['X', 'Twitch']) {
       assert.ok(
         document
           .querySelector(`.media-card__link[aria-label="${platform}"]`)
           ?.hasAttribute('hidden'),
       );
     }
-    for (const platform of ['YouTube', 'TikTok', 'Telegram']) {
+    for (const platform of ['Instagram', 'YouTube', 'TikTok', 'Telegram']) {
       assert.equal(
         document
           .querySelector(`.media-card__link[aria-label="${platform}"]`)
           ?.hasAttribute('hidden'),
         false,
+      );
+    }
+    for (const element of document.querySelectorAll(
+      '.media-card-wrap--business, .media-card-wrap--crypto, .notification-card--middle, .notification-card--bottom',
+    )) {
+      assert.ok(
+        element.closest('[hidden]'),
+        'Temporarily hidden projects and their news must not appear in the public page.',
       );
     }
   }
@@ -149,6 +192,11 @@ notFound.window.close();
 assert.ok(
   (await readFile(join(output, '_headers'), 'utf8')).includes('X-Content-Type-Options: nosniff'),
 );
+const functionRoutes = JSON.parse(await readFile(join(output, '_routes.json'), 'utf8'));
+assert.deepEqual(functionRoutes, { version: 1, include: ['/api/*'], exclude: [] });
+for (const endpoint of ['functions/api/forms.ts', 'functions/api/forms/config.ts']) {
+  assert.ok((await stat(join(root, endpoint))).isFile(), `Missing Pages Function: ${endpoint}`);
+}
 
 async function verifyFileLimits(directory) {
   let count = 0;

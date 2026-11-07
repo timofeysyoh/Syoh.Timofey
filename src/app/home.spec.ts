@@ -1,6 +1,9 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, DeferBlockBehavior, DeferBlockState, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { signal } from '@angular/core';
 import { Home } from './home';
+import { ContactPanel } from './contact-panel/contact-panel';
+import { FormSubmission } from './form-submission';
 
 describe('Home scroll handling', () => {
   let fixture: ComponentFixture<Home>;
@@ -37,6 +40,7 @@ describe('Home scroll handling', () => {
       </main>
     `,
     );
+    await TestBed.compileComponents();
     fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -50,7 +54,7 @@ describe('Home scroll handling', () => {
   });
 
   afterEach(() => {
-    fixture.destroy();
+    fixture?.destroy();
     vi.restoreAllMocks();
   });
 
@@ -107,15 +111,35 @@ describe('Home scroll handling', () => {
   });
 });
 
-describe('Home contact panel pointer interactions', () => {
+describe('Home deferred contact panel', () => {
   let fixture: ComponentFixture<Home>;
+  let deliveries: ReturnType<typeof createDeliveryMock>[];
+
+  function createDeliveryMock() {
+    return {
+      pending: signal(false),
+      sent: signal(false),
+      notice: signal(''),
+      error: signal(false),
+      submit: vi.fn(async (_form: HTMLFormElement, _kind: string, _container: HTMLElement) => {}),
+    };
+  }
 
   beforeEach(async () => {
     // Use the real Home template, including its backdrop event binding.
     TestBed.resetTestingModule();
+    deliveries = [];
+    TestBed.overrideComponent(ContactPanel, {
+      set: { providers: [{ provide: FormSubmission, useFactory: () => {
+        const delivery = createDeliveryMock();
+        deliveries.push(delivery);
+        return delivery;
+      } }] },
+    });
     await TestBed.configureTestingModule({
       imports: [Home],
       providers: [provideRouter([])],
+      deferBlockBehavior: DeferBlockBehavior.Manual,
     }).compileComponents();
     fixture = TestBed.createComponent(Home);
     fixture.detectChanges();
@@ -127,12 +151,18 @@ describe('Home contact panel pointer interactions', () => {
     TestBed.resetTestingModule();
   });
 
-  it('allows textarea resizing without dismissing the panel when the pointer is released outside', async () => {
+  async function openContactPanel(): Promise<HTMLElement> {
     const page = fixture.nativeElement as HTMLElement;
-    const contact = page.querySelector<HTMLButtonElement>('.footer-button--contact');
-    expect(contact).not.toBeNull();
-    contact!.click();
+    page.querySelector<HTMLButtonElement>('.footer-button--contact')!.click();
     await fixture.whenStable();
+    const [block] = await fixture.getDeferBlocks();
+    await block.render(DeferBlockState.Complete);
+    await fixture.whenStable();
+    return page;
+  }
+
+  it('allows textarea resizing without dismissing the panel when the pointer is released outside', async () => {
+    const page = await openContactPanel();
 
     const textarea = page.querySelector<HTMLTextAreaElement>('#contact-message');
     const backdrop = page.querySelector<HTMLElement>('.contact-panel-backdrop');
@@ -154,5 +184,122 @@ describe('Home contact panel pointer interactions', () => {
     backdrop!.dispatchEvent(new Event('pointerdown', { bubbles: true, cancelable: true }));
     await fixture.whenStable();
     expect(page.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('focuses the loaded form, delegates delivery without native navigation and clears a closed form', async () => {
+    const page = await openContactPanel();
+    const dialog = page.querySelector<HTMLElement>('[role="dialog"]')!;
+    const close = dialog.querySelector<HTMLButtonElement>('.contact-panel__close')!;
+    const send = dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const name = dialog.querySelector<HTMLInputElement>('#contact-full-name')!;
+    const message = dialog.querySelector<HTMLTextAreaElement>('#contact-message')!;
+    expect(document.activeElement).toBe(name);
+    expect(page.querySelector('main')!.hasAttribute('inert')).toBe(true);
+
+    close.focus();
+    close.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(send);
+    send.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(close);
+
+    name.value = 'Test visitor';
+    message.value = 'Test enquiry';
+    message.dispatchEvent(new Event('input', { bubbles: true }));
+    const delivery = deliveries[0];
+    delivery.submit.mockImplementation(async () => {
+      delivery.sent.set(true);
+      delivery.notice.set('Your message has been sent.');
+    });
+    const submit = new Event('submit', { bubbles: true, cancelable: true });
+    expect(dialog.querySelector('form')!.dispatchEvent(submit)).toBe(false);
+    await fixture.whenStable();
+    expect(delivery.submit).toHaveBeenCalledWith(
+      dialog.querySelector('form'), 'contact', dialog.querySelector('.contact-form__verification'),
+    );
+    expect(dialog.querySelector('[role="status"]')!.textContent).toContain('has been sent');
+    expect(send.disabled).toBe(true);
+    expect(dialog.querySelector('.contact-field__counter')!.textContent).toContain('12/1500');
+
+    close.click();
+    await fixture.whenStable();
+    expect(page.querySelector('[role="dialog"]')).toBeNull();
+    expect(page.querySelector('main')!.hasAttribute('inert')).toBe(false);
+    expect(document.activeElement).toBe(page.querySelector('.footer-button--contact'));
+
+    await openContactPanel();
+    expect(page.querySelector<HTMLInputElement>('#contact-full-name')!.value).toBe('');
+    expect(page.querySelector<HTMLTextAreaElement>('#contact-message')!.value).toBe('');
+    expect(page.querySelector('.contact-field__counter')!.textContent).toContain('0/1500');
+    expect(page.querySelector('[role="status"]')).toBeNull();
+    expect(page.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(false);
+    expect(deliveries[1]).not.toBe(delivery);
+  });
+
+  it('can close during loading and does not reopen when the deferred code finishes later', async () => {
+    const page = fixture.nativeElement as HTMLElement;
+    const contact = page.querySelector<HTMLButtonElement>('.footer-button--contact')!;
+    contact.focus();
+    contact.click();
+    await fixture.whenStable();
+    expect(page.querySelector('app-contact-panel')).toBeNull();
+    expect(page.querySelector('main')!.hasAttribute('inert')).toBe(true);
+
+    const [block] = await fixture.getDeferBlocks();
+    await block.render(DeferBlockState.Loading);
+    await fixture.whenStable();
+    const loading = page.querySelector<HTMLElement>('[role="dialog"]')!;
+    const close = loading.querySelector<HTMLButtonElement>('.contact-panel__close')!;
+    expect(loading.querySelector('[role="status"]')!.textContent).toContain('Loading contact form');
+    expect(document.activeElement).toBe(loading);
+    loading.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(close);
+    for (const shiftKey of [false, true]) {
+      const tab = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true });
+      close.dispatchEvent(tab);
+      expect(tab.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(close);
+    }
+
+    const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    document.dispatchEvent(escape);
+    await fixture.whenStable();
+    expect(escape.defaultPrevented).toBe(true);
+    expect(page.querySelector('main')!.hasAttribute('inert')).toBe(false);
+    expect(document.activeElement).toBe(contact);
+
+    await block.render(DeferBlockState.Complete);
+    await fixture.whenStable();
+    expect(page.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('provides a focused, closable recovery dialog if the form cannot be loaded', async () => {
+    const page = fixture.nativeElement as HTMLElement;
+    const contact = page.querySelector<HTMLButtonElement>('.footer-button--contact')!;
+    contact.click();
+    await fixture.whenStable();
+    const [block] = await fixture.getDeferBlocks();
+    await block.render(DeferBlockState.Error);
+    await fixture.whenStable();
+
+    const error = page.querySelector<HTMLElement>('[role="dialog"]')!;
+    expect(error.querySelector('[role="alert"]')!.textContent).toContain('could not be loaded');
+    expect(error.querySelector('a')!.getAttribute('href')).toBe('/');
+    expect(document.activeElement).toBe(error);
+    const close = error.querySelector<HTMLButtonElement>('.contact-panel__close')!;
+    const reload = error.querySelector<HTMLAnchorElement>('a')!;
+    close.focus();
+    const backwards = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+    close.dispatchEvent(backwards);
+    expect(backwards.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(reload);
+    const forwards = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    reload.dispatchEvent(forwards);
+    expect(forwards.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(close);
+    close.click();
+    await fixture.whenStable();
+    expect(page.querySelector('[role="dialog"]')).toBeNull();
+    expect(page.querySelector('main')!.hasAttribute('inert')).toBe(false);
+    expect(document.activeElement).toBe(contact);
   });
 });
