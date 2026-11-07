@@ -161,8 +161,8 @@ function validateSubmission(value: unknown): Submission | null {
   const allowed = new Set([...COMMON_FIELDS, ...(kind === 'contact' ? ['purpose', 'phone'] : ['interest', 'socialProfile', 'socialNetwork'])]);
   if (Object.keys(input).some((key) => !allowed.has(key)) || input['consent'] !== true || input['website'] !== '') return null;
   const requestId = line(input['requestId'], 36);
-  const fullName = line(input['fullName'], 100);
-  const email = line(input['email'], 254);
+  const fullName = line(input['fullName'], 50);
+  const email = line(input['email'], 100);
   const token = line(input['turnstileToken'], 2048);
   const rawMessage = input['message'];
   if (!requestId || !UUID.test(requestId) || !fullName || !email || !emailAddress(email) ||
@@ -173,12 +173,12 @@ function validateSubmission(value: unknown): Submission | null {
   };
   if (kind === 'contact') {
     const purpose = line(input['purpose'], 40);
-    const phone = line(input['phone'], 30, true);
+    const phone = line(input['phone'], 20, true);
     if (!purpose || !PURPOSES.includes(purpose) || phone === null) return null;
     return { ...submission, purpose, phone };
   }
   const interest = line(input['interest'], 40);
-  const socialProfile = line(input['socialProfile'], 160);
+  const socialProfile = line(input['socialProfile'], 40);
   const socialNetwork = line(input['socialNetwork'], 20);
   if (!interest || !Object.hasOwn(INTERESTS, interest) || !socialProfile || !socialNetwork || !NETWORKS.includes(socialNetwork)) return null;
   return { ...submission, interest, socialProfile, socialNetwork };

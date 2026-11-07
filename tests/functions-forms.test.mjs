@@ -181,14 +181,29 @@ test('rejects invalid payload types, unsupported fields, honeypots and missing a
 test('enforces the browser field limits on the server', async () => {
   const calls = stubNetwork();
   for (const invalid of [
-    { ...contact, fullName: 'a'.repeat(101) },
-    { ...contact, email: `${'a'.repeat(64)}@${'b'.repeat(63)}.${'c'.repeat(63)}.${'d'.repeat(62)}` },
-    { ...contact, message: 'a'.repeat(1501) },
-    { ...contact, phone: '1'.repeat(31) },
+    ...[contact, podcast].flatMap((form) => [
+      { ...form, fullName: 'a'.repeat(51) },
+      { ...form, email: `${'a'.repeat(64)}@${'b'.repeat(32)}.com` },
+      { ...form, message: 'a'.repeat(1501) },
+    ]),
+    { ...contact, phone: '1'.repeat(21) },
     { ...contact, turnstileToken: 'a'.repeat(2049) },
-    { ...podcast, socialProfile: 'a'.repeat(161) },
+    { ...podcast, socialProfile: 'a'.repeat(41) },
   ]) assert.equal((await submit(invalid)).status, 400);
   assert.equal(calls.length, 0);
+
+  for (const form of [
+    { ...contact, phone: '1'.repeat(20) },
+    { ...podcast, socialProfile: 'a'.repeat(40) },
+  ]) {
+    stubNetwork({ success: true, hostname: 'syohtimofey.com', action: form.kind });
+    assert.equal((await submit({
+      ...form,
+      fullName: 'a'.repeat(50),
+      email: `${'a'.repeat(64)}@${'b'.repeat(31)}.com`,
+      message: 'a'.repeat(1500),
+    })).status, 202);
+  }
 });
 
 test('rejects unsupported podcast request and network values', async () => {

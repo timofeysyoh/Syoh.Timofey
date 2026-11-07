@@ -34,14 +34,14 @@ describe('FormSubmission', () => {
   function makeForm(kind: 'contact' | 'podcast' = 'contact'): HTMLFormElement {
     const element = document.createElement('form');
     element.innerHTML = `
-      <input name="fullName" value="Test Guest" required maxlength="100">
-      <input name="email" type="email" value="guest@example.com" required maxlength="254">
+      <input name="fullName" value="Test Guest" required maxlength="50">
+      <input name="email" type="email" value="guest@example.com" required maxlength="100">
       <textarea name="message" required maxlength="1500">A conversation about music.</textarea>
       <input name="consent" type="checkbox" checked required>
       <input name="website" value="" tabindex="-1">
       ${kind === 'contact'
-        ? '<select name="purpose" required><option selected>Ordering a service</option></select><input name="phone" value="+380123456789">'
-        : '<select name="interest" required><option value="guest" selected>Join as a guest</option></select><input name="socialProfile" value="@guest" required><input name="socialNetwork" type="hidden" value="instagram">'}
+        ? '<select name="purpose" required><option selected>Ordering a service</option></select><input name="phone" value="+380123456789" maxlength="20">'
+        : '<select name="interest" required><option value="guest" selected>Join as a guest</option></select><input name="socialProfile" value="@guest" required maxlength="40"><input name="socialNetwork" type="hidden" value="instagram">'}
       <div class="verification"></div>`;
     document.body.append(element);
     return element;
