@@ -1,0 +1,27 @@
+<dialog
+  #progressDialog
+  class="submission-progress"
+  aria-modal="true"
+  [attr.aria-labelledby]="titleId()"
+  [attr.aria-describedby]="descriptionId()"
+  (cancel)="cancel($event)"
+>
+  <button
+    #cancelButton
+    class="submission-progress__close"
+    type="button"
+    aria-label="Cancel sending"
+    (click)="cancel()"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m6 6 12 12M18 6 6 18" />
+    </svg>
+  </button>
+
+  <span class="submission-progress__spinner" aria-hidden="true"></span>
+  <div role="status" aria-live="polite" aria-atomic="true">
+    <h2 class="submission-progress__title" [id]="titleId()">{{ title() }}</h2>
+    <p class="submission-progress__description" [id]="descriptionId()">Please wait a moment.</p>
+  </div>
+  <div #verificationContainer class="contact-form__verification"></div>
+</dialog>

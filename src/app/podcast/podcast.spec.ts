@@ -4,14 +4,18 @@ import { signal } from '@angular/core';
 import { Podcast } from './podcast';
 import { PodcastApplication } from './application/podcast-application';
 import { FormSubmission } from '../form-submission';
+import { SubmissionNotificationService } from '../submission-notification';
 
 describe('Podcast application', () => {
   let fixture: ComponentFixture<Podcast>;
   let deliveries: ReturnType<typeof createDeliveryMock>[];
+  let notifications: { show: ReturnType<typeof vi.fn> };
+  let restoreDialogs: () => void;
 
   function createDeliveryMock() {
     return {
       pending: signal(false),
+      phase: signal<'idle' | 'verifying' | 'sending'>('idle'),
       sent: signal(false),
       notice: signal(''),
       error: signal(false),
@@ -22,6 +26,18 @@ describe('Podcast application', () => {
   beforeEach(async () => {
     TestBed.resetTestingModule();
     deliveries = [];
+    notifications = { show: vi.fn() };
+    const prototype = HTMLDialogElement.prototype;
+    const originalShow = Object.getOwnPropertyDescriptor(prototype, 'showModal');
+    const originalClose = Object.getOwnPropertyDescriptor(prototype, 'close');
+    Object.defineProperty(prototype, 'showModal', { configurable: true, value: function (this: HTMLDialogElement) { this.open = true; } });
+    Object.defineProperty(prototype, 'close', { configurable: true, value: function (this: HTMLDialogElement) { this.open = false; } });
+    restoreDialogs = () => {
+      if (originalShow) Object.defineProperty(prototype, 'showModal', originalShow);
+      else Reflect.deleteProperty(prototype, 'showModal');
+      if (originalClose) Object.defineProperty(prototype, 'close', originalClose);
+      else Reflect.deleteProperty(prototype, 'close');
+    };
     TestBed.overrideComponent(PodcastApplication, {
       set: { providers: [{ provide: FormSubmission, useFactory: () => {
         const delivery = createDeliveryMock();
@@ -31,14 +47,18 @@ describe('Podcast application', () => {
     });
     await TestBed.configureTestingModule({
       imports: [Podcast],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), { provide: SubmissionNotificationService, useValue: notifications }],
       deferBlockBehavior: DeferBlockBehavior.Manual,
     }).compileComponents();
     fixture = TestBed.createComponent(Podcast);
     fixture.detectChanges();
   });
 
-  afterEach(() => fixture.destroy());
+  afterEach(() => {
+    fixture.destroy();
+    TestBed.resetTestingModule();
+    restoreDialogs();
+  });
 
   async function openApplication(): Promise<HTMLElement> {
     const page = fixture.nativeElement as HTMLElement;
@@ -112,15 +132,24 @@ describe('Podcast application', () => {
     expect(page.querySelector('[role="dialog"]')).toBeNull();
   });
 
-  it('delegates delivery, disables pending and sent submissions, and displays recoverable delivery errors', async () => {
+  it('shows sending feedback, preserves a failed application and closes only after acceptance', async () => {
     const page = await openApplication();
     const form = page.querySelector<HTMLFormElement>('form')!;
     const submit = page.querySelector<HTMLButtonElement>('button[type="submit"]')!;
     const delivery = deliveries[0];
+    const name = page.querySelector<HTMLInputElement>('#podcast-name')!;
+    name.value = 'Guest waiting for a reply';
     expect(submit.disabled).toBe(false);
+    let respond!: () => void;
+    const response = new Promise<void>((resolve) => { respond = resolve; });
     delivery.submit.mockImplementation(async () => {
+      delivery.phase.set('verifying');
       delivery.pending.set(true);
-      delivery.notice.set('Sending your application…');
+      await response;
+      delivery.pending.set(false);
+      delivery.phase.set('idle');
+      delivery.error.set(true);
+      delivery.notice.set('We could not confirm delivery. Please try again.');
     });
 
     // Even a manually dispatched submit must not leak values in a native GET request.
@@ -132,25 +161,33 @@ describe('Podcast application', () => {
     expect(submit.disabled).toBe(true);
     expect(submit.getAttribute('aria-busy')).toBe('true');
     expect(submit.textContent).toContain('Sending');
+    const progress = page.querySelector<HTMLDialogElement>('dialog.submission-progress')!;
+    expect(progress.open).toBe(true);
+    expect(progress.contains(page.querySelector('.contact-form__verification'))).toBe(true);
+    expect(notifications.show).not.toHaveBeenCalled();
 
-    delivery.pending.set(false);
-    delivery.error.set(true);
-    delivery.notice.set('We could not confirm delivery. Please try again.');
+    respond();
+    await response;
     await fixture.whenStable();
+    expect(progress.open).toBe(false);
+    expect(page.querySelector('form')).toBe(form);
+    expect(name.value).toBe('Guest waiting for a reply');
     expect(submit.disabled).toBe(false);
     expect(page.querySelector('[role="alert"]')?.textContent).toContain('try again');
+    expect(document.activeElement).toBe(submit);
 
     delivery.submit.mockImplementation(async () => {
       delivery.error.set(false);
       delivery.sent.set(true);
-      delivery.notice.set('Your application has been sent.');
+      delivery.notice.set('Application sent');
     });
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await fixture.whenStable();
-    expect(submit.disabled).toBe(true);
-    expect(submit.textContent).toContain('Application sent');
-    expect(page.querySelector('[role="status"]')?.textContent).toContain('has been sent');
-    expect(page.querySelector('[role="alert"]')).toBeNull();
+    expect(notifications.show).toHaveBeenCalledExactlyOnceWith('podcast');
+    expect(page.querySelector('form')).toBeNull();
+    expect(page.querySelector('[role="dialog"]')).toBeNull();
+    expect(page.querySelector('main')!.hasAttribute('inert')).toBe(false);
+    expect(document.activeElement).toBe(page.querySelector('.podcast-primary'));
   });
 
   it('requires an unchecked acknowledgement and lets the guest read terms without replacing the application', async () => {

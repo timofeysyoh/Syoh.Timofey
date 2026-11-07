@@ -2,6 +2,7 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   HostListener,
   inject,
@@ -12,6 +13,8 @@ import {
 import { RouterLink } from '@angular/router';
 import { ResizableMessage } from '../../resizable-message.directive';
 import { FormSubmission } from '../../form-submission';
+import { SubmissionNotificationService } from '../../submission-notification';
+import { SubmissionProgress } from '../../submission-progress';
 
 type SocialNetwork = {
   value: string;
@@ -21,7 +24,7 @@ type SocialNetwork = {
 
 @Component({
   selector: 'app-podcast-application',
-  imports: [RouterLink, ResizableMessage],
+  imports: [RouterLink, ResizableMessage, SubmissionProgress],
   providers: [FormSubmission],
   templateUrl: './podcast-application.html',
   styleUrl: './podcast-application.scss',
@@ -29,13 +32,15 @@ type SocialNetwork = {
 })
 export class PodcastApplication {
   private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly notifications = inject(SubmissionNotificationService);
   @ViewChild('applicationDialog') private applicationDialog?: ElementRef<HTMLElement>;
   @ViewChild('applicationFirstField') private applicationFirstField?: ElementRef<HTMLInputElement>;
   @ViewChild('socialField') private socialField?: ElementRef<HTMLElement>;
   @ViewChild('socialProfileField') private socialProfileField?: ElementRef<HTMLInputElement>;
   @ViewChild('socialNetworkTrigger') private socialNetworkTrigger?: ElementRef<HTMLButtonElement>;
   @ViewChild('applicationMessageField') private applicationMessageField?: ElementRef<HTMLTextAreaElement>;
-  @ViewChild('verificationContainer') private verificationContainer?: ElementRef<HTMLElement>;
+  @ViewChild('submissionProgress') private submissionProgress?: SubmissionProgress;
 
   readonly delivery = inject(FormSubmission);
   readonly socialNetworks: readonly SocialNetwork[] = [
@@ -155,10 +160,23 @@ export class PodcastApplication {
     this.messageLength = (event.target as HTMLTextAreaElement).value.length;
   }
 
-  submitApplication(event: Event): void {
+  async submitApplication(event: Event): Promise<void> {
     event.preventDefault();
-    if (this.verificationContainer) {
-      void this.delivery.submit(event.target as HTMLFormElement, 'podcast', this.verificationContainer.nativeElement);
+    if (!this.submissionProgress || this.delivery.pending() || this.delivery.sent()) return;
+    const form = event.target as HTMLFormElement;
+    this.closeSocialMenu();
+    await this.delivery.submit(form, 'podcast', this.submissionProgress.verificationContainer.nativeElement);
+    if (this.destroyRef.destroyed) return;
+
+    if (this.delivery.sent()) {
+      this.notifications.show('podcast');
+      this.closeRequested.emit();
+    } else if (this.delivery.error()) {
+      afterNextRender(() => {
+        if (this.destroyRef.destroyed || !form.isConnected) return;
+        form.querySelector<HTMLButtonElement>('button[type="submit"]')?.focus({ preventScroll: true });
+        form.querySelector<HTMLElement>('.contact-form__notice')?.scrollIntoView?.({ block: 'nearest' });
+      }, { injector: this.injector });
     }
   }
 }

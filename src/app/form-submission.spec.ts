@@ -140,10 +140,10 @@ describe('FormSubmission', () => {
     expect(delivery.pending()).toBe(false);
     expect(delivery.sent()).toBe(true);
     expect(delivery.error()).toBe(false);
-    expect(delivery.notice()).toContain('accepted for email delivery');
+    expect(delivery.notice()).toBe('Message sent');
   });
 
-  it('includes the podcast request and selected network while keeping booking acknowledgement separate', async () => {
+  it('includes the podcast request and selected network in application delivery', async () => {
     form.remove();
     form = makeForm('podcast');
     container = form.querySelector('.verification')!;
@@ -156,7 +156,7 @@ describe('FormSubmission', () => {
     expect(posts[0]).not.toHaveProperty('purpose');
     expect(posts[0]).not.toHaveProperty('phone');
     expect(verificationOptions[0]['action']).toBe('podcast');
-    expect(delivery.notice()).toContain('does not confirm a booking');
+    expect(delivery.notice()).toBe('Application sent');
   });
 
   it('ignores a second submission while pending and any submission after acceptance', async () => {
@@ -169,11 +169,16 @@ describe('FormSubmission', () => {
     });
 
     const first = delivery.submit(form, 'contact', container);
+    expect(delivery.pending()).toBe(true);
+    expect(delivery.phase()).toBe('verifying');
     await delivery.submit(form, 'contact', container);
     await vi.waitFor(() => expect(posts).toHaveLength(1));
     expect(delivery.pending()).toBe(true);
+    expect(delivery.phase()).toBe('sending');
     acceptPost(json({ ok: true }, 202));
     await first;
+    expect(delivery.pending()).toBe(false);
+    expect(delivery.phase()).toBe('idle');
     await delivery.submit(form, 'contact', container);
 
     expect(posts).toHaveLength(1);

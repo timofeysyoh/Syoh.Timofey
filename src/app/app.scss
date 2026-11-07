@@ -983,6 +983,162 @@
   text-align: right;
 }
 
+.submission-progress {
+  position: fixed;
+  inset: 0;
+  width: min(22rem, calc(100vw - 2rem));
+  height: fit-content;
+  max-width: none;
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  overflow-y: auto;
+  padding: 2rem 1.5rem 1.6rem;
+  border: 1px solid rgb(255 255 255 / 72%);
+  border-radius: 1.65rem;
+  background:
+    radial-gradient(circle at 12% 0%, rgb(255 255 255 / 66%), transparent 38%),
+    linear-gradient(145deg, rgb(236 238 240), rgb(190 195 199));
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 92%), 0 1.5rem 4rem -1.4rem rgb(34 38 42 / 62%);
+  color: #292d30;
+  font-family: inherit;
+  text-align: center;
+}
+
+.submission-progress:not([open]) {
+  display: none;
+}
+
+.submission-progress[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.submission-progress::backdrop {
+  background: rgb(44 49 54 / 72%);
+}
+
+.submission-progress__close,
+.submission-toast__close {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 60%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 25%);
+  color: #555c61;
+  cursor: pointer;
+}
+
+.submission-progress__close {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+}
+
+.submission-progress__close svg,
+.submission-toast__close svg {
+  width: 0.9rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.submission-progress__spinner {
+  width: 2.8rem;
+  height: 2.8rem;
+  margin: 0.35rem 0 0.2rem;
+  border: 3px solid rgb(69 86 97 / 15%);
+  border-top-color: #4c616e;
+  border-radius: 50%;
+  animation: submission-spin 0.8s linear infinite;
+}
+
+.submission-progress__title {
+  margin: 0;
+  max-width: 17rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.submission-progress__description {
+  margin: 0;
+  color: #596167;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.submission-toast {
+  position: fixed;
+  z-index: 120;
+  right: 1rem;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: fit-content;
+  max-width: calc(100vw - 2rem);
+  margin-inline: auto;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid rgb(255 255 255 / 76%);
+  border-radius: 1.4rem;
+  background: linear-gradient(145deg, #f0f3f2, #ccd6d3);
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 94%), 0 0.8rem 2rem rgb(32 45 40 / 24%);
+  color: #273d35;
+  animation: submission-toast-in 180ms ease-out;
+}
+
+.submission-toast p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.submission-toast__check {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  flex: 0 0 2.1rem;
+  place-items: center;
+  border: 1px solid rgb(84 119 102 / 20%);
+  border-radius: 50%;
+  background: rgb(98 141 119 / 12%);
+}
+
+.submission-toast__check svg {
+  width: 1.25rem;
+  fill: none;
+  stroke: #3e7159;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+@keyframes submission-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes submission-toast-in {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submission-progress__spinner,
+  .submission-toast {
+    animation: none;
+  }
+}
+
 @media (max-width: 48rem), (pointer: coarse) {
   .contact-field__control {
     // Safari zooms focused form controls when their text is smaller than 16px.

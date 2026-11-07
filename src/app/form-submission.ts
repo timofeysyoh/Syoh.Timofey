@@ -68,6 +68,7 @@ export class FormSubmission {
   private requestId = '';
 
   readonly pending = signal(false);
+  readonly phase = signal<'idle' | 'verifying' | 'sending'>('idle');
   readonly sent = signal(false);
   readonly notice = signal('');
   readonly error = signal(false);
@@ -102,6 +103,7 @@ export class FormSubmission {
     };
 
     this.pending.set(true);
+    this.phase.set('verifying');
     this.notice.set('');
     this.error.set(false);
     try {
@@ -119,6 +121,7 @@ export class FormSubmission {
       const api = await abortable(loadVerification(this.document), this.abort.signal);
       const token = await this.verify(api, container, body['turnstileSiteKey'], kind);
       if (this.destroyed) return;
+      this.phase.set('sending');
       const response = await this.request('/api/forms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -134,8 +137,8 @@ export class FormSubmission {
       if (!this.destroyed) {
         this.sent.set(true);
         this.notice.set(kind === 'podcast'
-          ? 'Your application has been accepted for email delivery. This does not confirm a booking.'
-          : 'Your message has been accepted for email delivery.');
+          ? 'Application sent'
+          : 'Message sent');
       }
     } catch (error: unknown) {
       if (this.destroyed) return;
@@ -151,7 +154,10 @@ export class FormSubmission {
       this.notice.set(messages[code]);
     } finally {
       this.removeWidget();
-      if (!this.destroyed) this.pending.set(false);
+      if (!this.destroyed) {
+        this.pending.set(false);
+        this.phase.set('idle');
+      }
     }
   }
 

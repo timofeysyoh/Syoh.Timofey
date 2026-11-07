@@ -4,6 +4,7 @@ import { signal } from '@angular/core';
 import { Home } from './home';
 import { ContactPanel } from './contact-panel/contact-panel';
 import { FormSubmission } from './form-submission';
+import { SubmissionNotificationService } from './submission-notification';
 
 describe('Home scroll handling', () => {
   let fixture: ComponentFixture<Home>;
@@ -114,10 +115,13 @@ describe('Home scroll handling', () => {
 describe('Home deferred contact panel', () => {
   let fixture: ComponentFixture<Home>;
   let deliveries: ReturnType<typeof createDeliveryMock>[];
+  let notifications: { show: ReturnType<typeof vi.fn> };
+  let restoreDialogs: () => void;
 
   function createDeliveryMock() {
     return {
       pending: signal(false),
+      phase: signal<'idle' | 'verifying' | 'sending'>('idle'),
       sent: signal(false),
       notice: signal(''),
       error: signal(false),
@@ -129,6 +133,18 @@ describe('Home deferred contact panel', () => {
     // Use the real Home template, including its backdrop event binding.
     TestBed.resetTestingModule();
     deliveries = [];
+    notifications = { show: vi.fn() };
+    const prototype = HTMLDialogElement.prototype;
+    const originalShow = Object.getOwnPropertyDescriptor(prototype, 'showModal');
+    const originalClose = Object.getOwnPropertyDescriptor(prototype, 'close');
+    Object.defineProperty(prototype, 'showModal', { configurable: true, value: function (this: HTMLDialogElement) { this.open = true; } });
+    Object.defineProperty(prototype, 'close', { configurable: true, value: function (this: HTMLDialogElement) { this.open = false; } });
+    restoreDialogs = () => {
+      if (originalShow) Object.defineProperty(prototype, 'showModal', originalShow);
+      else Reflect.deleteProperty(prototype, 'showModal');
+      if (originalClose) Object.defineProperty(prototype, 'close', originalClose);
+      else Reflect.deleteProperty(prototype, 'close');
+    };
     TestBed.overrideComponent(ContactPanel, {
       set: { providers: [{ provide: FormSubmission, useFactory: () => {
         const delivery = createDeliveryMock();
@@ -138,7 +154,7 @@ describe('Home deferred contact panel', () => {
     });
     await TestBed.configureTestingModule({
       imports: [Home],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), { provide: SubmissionNotificationService, useValue: notifications }],
       deferBlockBehavior: DeferBlockBehavior.Manual,
     }).compileComponents();
     fixture = TestBed.createComponent(Home);
@@ -149,6 +165,7 @@ describe('Home deferred contact panel', () => {
   afterEach(() => {
     fixture.destroy();
     TestBed.resetTestingModule();
+    restoreDialogs();
   });
 
   async function openContactPanel(): Promise<HTMLElement> {
@@ -206,22 +223,21 @@ describe('Home deferred contact panel', () => {
     message.value = 'Test enquiry';
     message.dispatchEvent(new Event('input', { bubbles: true }));
     const delivery = deliveries[0];
+    const form = dialog.querySelector('form')!;
+    const verification = page.querySelector('.contact-form__verification');
+    await fixture.whenStable();
+    expect(dialog.querySelector('.contact-field__counter')!.textContent).toContain('12/1500');
     delivery.submit.mockImplementation(async () => {
       delivery.sent.set(true);
-      delivery.notice.set('Your message has been sent.');
+      delivery.notice.set('Message sent');
     });
     const submit = new Event('submit', { bubbles: true, cancelable: true });
     expect(dialog.querySelector('form')!.dispatchEvent(submit)).toBe(false);
     await fixture.whenStable();
     expect(delivery.submit).toHaveBeenCalledWith(
-      dialog.querySelector('form'), 'contact', dialog.querySelector('.contact-form__verification'),
+      form, 'contact', verification,
     );
-    expect(dialog.querySelector('[role="status"]')!.textContent).toContain('has been sent');
-    expect(send.disabled).toBe(true);
-    expect(dialog.querySelector('.contact-field__counter')!.textContent).toContain('12/1500');
-
-    close.click();
-    await fixture.whenStable();
+    expect(notifications.show).toHaveBeenCalledExactlyOnceWith('contact');
     expect(page.querySelector('[role="dialog"]')).toBeNull();
     expect(page.querySelector('main')!.hasAttribute('inert')).toBe(false);
     expect(document.activeElement).toBe(page.querySelector('.footer-button--contact'));
@@ -230,9 +246,44 @@ describe('Home deferred contact panel', () => {
     expect(page.querySelector<HTMLInputElement>('#contact-full-name')!.value).toBe('');
     expect(page.querySelector<HTMLTextAreaElement>('#contact-message')!.value).toBe('');
     expect(page.querySelector('.contact-field__counter')!.textContent).toContain('0/1500');
-    expect(page.querySelector('[role="status"]')).toBeNull();
+    expect(page.querySelector('.contact-form__notice')).toBeNull();
     expect(page.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(false);
     expect(deliveries[1]).not.toBe(delivery);
+  });
+
+  it('shows a separate sending dialog and ignores late acceptance after it is cancelled', async () => {
+    const page = await openContactPanel();
+    const form = page.querySelector<HTMLFormElement>('form')!;
+    const delivery = deliveries[0];
+    let accept!: () => void;
+    const response = new Promise<void>((resolve) => { accept = resolve; });
+    delivery.submit.mockImplementation(async () => {
+      delivery.phase.set('verifying');
+      delivery.pending.set(true);
+      await response;
+      delivery.pending.set(false);
+      delivery.phase.set('idle');
+      delivery.sent.set(true);
+    });
+
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+    const progress = page.querySelector<HTMLDialogElement>('dialog.submission-progress')!;
+    expect(progress.open).toBe(true);
+    expect(progress.contains(page.querySelector('.contact-form__verification'))).toBe(true);
+    expect(form.contains(page.querySelector('.contact-form__verification'))).toBe(false);
+    expect(page.querySelector('.contact-panel')!.getAttribute('aria-busy')).toBe('true');
+    expect(page.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(true);
+
+    progress.querySelector<HTMLButtonElement>('.submission-progress__close')!.click();
+    await fixture.whenStable();
+    expect(page.querySelector('form')).toBeNull();
+    expect(page.querySelector('main')!.hasAttribute('inert')).toBe(false);
+    accept();
+    await response;
+    await fixture.whenStable();
+    expect(notifications.show).not.toHaveBeenCalled();
+    expect(page.querySelector('form')).toBeNull();
   });
 
   it('can close during loading and does not reopen when the deferred code finishes later', async () => {

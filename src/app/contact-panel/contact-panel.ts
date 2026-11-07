@@ -2,25 +2,32 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   inject,
+  Injector,
   output,
   ViewChild,
 } from '@angular/core';
 import { ResizableMessage } from '../resizable-message.directive';
 import { FormSubmission } from '../form-submission';
+import { SubmissionNotificationService } from '../submission-notification';
+import { SubmissionProgress } from '../submission-progress';
 
 @Component({
   selector: 'app-contact-panel',
-  imports: [ResizableMessage],
+  imports: [ResizableMessage, SubmissionProgress],
   providers: [FormSubmission],
   templateUrl: './contact-panel.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ContactPanel {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
+  private readonly notifications = inject(SubmissionNotificationService);
   @ViewChild('contactPanel') private contactPanel?: ElementRef<HTMLElement>;
   @ViewChild('contactFirstField') private contactFirstField?: ElementRef<HTMLInputElement>;
-  @ViewChild('verificationContainer') private verificationContainer?: ElementRef<HTMLElement>;
+  @ViewChild('submissionProgress') private submissionProgress?: SubmissionProgress;
 
   readonly closed = output<void>();
   readonly delivery = inject(FormSubmission);
@@ -60,10 +67,22 @@ export class ContactPanel {
     this.contactMessageLength = (event.target as HTMLTextAreaElement).value.length;
   }
 
-  submitContactForm(event: SubmitEvent): void {
+  async submitContactForm(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    if (this.verificationContainer) {
-      void this.delivery.submit(event.target as HTMLFormElement, 'contact', this.verificationContainer.nativeElement);
+    if (!this.submissionProgress || this.delivery.pending() || this.delivery.sent()) return;
+    const form = event.target as HTMLFormElement;
+    await this.delivery.submit(form, 'contact', this.submissionProgress.verificationContainer.nativeElement);
+    if (this.destroyRef.destroyed) return;
+
+    if (this.delivery.sent()) {
+      this.notifications.show('contact');
+      this.closed.emit();
+    } else if (this.delivery.error()) {
+      afterNextRender(() => {
+        if (this.destroyRef.destroyed || !form.isConnected) return;
+        form.querySelector<HTMLButtonElement>('button[type="submit"]')?.focus({ preventScroll: true });
+        form.querySelector<HTMLElement>('.contact-form__notice')?.scrollIntoView?.({ block: 'nearest' });
+      }, { injector: this.injector });
     }
   }
 }
